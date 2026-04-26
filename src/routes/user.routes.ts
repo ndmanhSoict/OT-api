@@ -7,5 +7,7 @@ const router = Router();
 // Gắn middleware authenticateJWT và isAdmin để chặn truy cập trái phép
 router.post('/', authenticateJWT, isAdmin, UserController.createUser);
 router.put('/:id', authenticateJWT, isAdmin, UserController.updateUser);
+router.get('/:id', authenticateJWT, isAdmin, UserController.getUserById);
+router.delete('/:id', authenticateJWT, isAdmin, UserController.deleteUser);
 
 export default router;
