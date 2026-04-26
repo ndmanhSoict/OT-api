@@ -81,9 +81,9 @@
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
-                  "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
-                  "    pm.collectionVariables.set('userId', jsonData.data.user.id);",
+                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.environment.set('refreshToken', jsonData.data.refreshToken);",
+                  "    pm.environment.set('userId', jsonData.data.user.id);",
                   "    console.log('Login thanh cong!');",
                   "    console.log('Access Token:', jsonData.data.accessToken);",
                   "} else {",
@@ -130,7 +130,7 @@
                 "exec": [
                   "if (pm.response.code === 200) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
                   "    console.log('Refresh Token thanh cong!');",
                   "    console.log('New Access Token:', jsonData.data.accessToken);",
                   "} else {",
@@ -266,7 +266,7 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('createdUserId', jsonData.data.id);",
+                  "    pm.environment.set('createdUserId', jsonData.data.id);",
                   "    console.log('Tao user thanh cong!');",
                   "    console.log('User ID:', jsonData.data.id);",
                   "} else {",
@@ -539,7 +539,7 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('copyrightId', jsonData.id);",
+                  "    pm.environment.set('copyrightId', jsonData.id);",
                   "    console.log('Tao ban quyen thanh cong!');",
                   "    console.log('Copyright ID:', jsonData.id);",
                   "} else {",
@@ -618,7 +618,7 @@
                 "exec": [
                   "if (pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.collectionVariables.set('copyrightId', jsonData.id);",
+                  "    pm.environment.set('copyrightId', jsonData.id);",
                   "    console.log('Tao ban quyen thanh cong!');",
                   "    console.log('Copyright ID:', jsonData.id);",
                   "} else {",
