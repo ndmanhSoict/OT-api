@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.routes';
+import userRoutes from './routes/user.routes';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -19,6 +20,9 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'OK', timestamp: new Date() });
 });
 
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+
 // Error handling
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
@@ -30,7 +34,6 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.use('/api/auth', authRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -1,6 +1,7 @@
 -- 1. BẢNG TÀI KHOẢN VÀ CHỦ THỂ
+-- Sửa lại bảng users
 CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT PRIMARY KEY, -- Sử dụng BIGINT để chứa timestamp và không dùng AUTO_INCREMENT
     username VARCHAR(255) UNIQUE NOT NULL,
     fullName VARCHAR(255) NOT NULL,
     passwordHash VARCHAR(255) NOT NULL,

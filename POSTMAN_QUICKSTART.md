@@ -35,7 +35,9 @@ npm run dev
 
 ## 🧪 Test Cases
 
-### ✅ Login Thành Công
+### ✅ **Authentication Tests**
+
+#### Login Thành Công
 ```bash
 POST http://localhost:3000/api/auth/login
 
@@ -57,7 +59,7 @@ Response (200):
 }
 ```
 
-### ✅ Refresh Token
+#### Refresh Token
 ```bash
 POST http://localhost:3000/api/auth/refresh-token
 
@@ -75,7 +77,61 @@ Response (200):
 }
 ```
 
-### ❌ Login Thất Bại (Email không tồn tại)
+### ✅ **User Management Tests** (Admin Only)
+
+#### Create User
+```bash
+POST http://localhost:3000/api/users
+Authorization: Bearer {{accessToken}}
+
+Body:
+{
+  "username": "officer@bacninh.gov.vn",
+  "fullName": "Trịnh Văn Công",
+  "password": "SecurePass@2024",
+  "role": "officer"
+}
+
+Response (201):
+{
+  "success": true,
+  "message": "Tạo tài khoản thành công",
+  "data": {
+    "id": 3,
+    "username": "officer@bacninh.gov.vn",
+    "fullName": "Trịnh Văn Công",
+    "role": "officer"
+  }
+}
+```
+
+#### Update User
+```bash
+PUT http://localhost:3000/api/users/3
+Authorization: Bearer {{accessToken}}
+
+Body:
+{
+  "fullName": "Trịnh Văn Công - Updated",
+  "role": "officer",
+  "password": "NewSecurePass@2024"
+}
+
+Response (200):
+{
+  "success": true,
+  "message": "Cập nhật tài khoản thành công",
+  "data": {
+    "id": 3,
+    "fullName": "Trịnh Văn Công - Updated",
+    "role": "officer"
+  }
+}
+```
+
+### ❌ **Error Cases**
+
+#### Login Thất Bại (Email không tồn tại)
 ```bash
 Response (401):
 {
@@ -84,12 +140,39 @@ Response (401):
 }
 ```
 
-### ❌ Login Thất Bại (Mật khẩu sai)
+#### Create User - Duplicate Username
+```bash
+Response (409):
+{
+  "success": false,
+  "message": "Username này đã tồn tại trong hệ thống"
+}
+```
+
+#### Create User - Missing Fields
+```bash
+Response (400):
+{
+  "success": false,
+  "message": "Vui lòng cung cấp đủ thông tin (username, fullName, password, role)"
+}
+```
+
+#### Update User - Not Found
+```bash
+Response (404):
+{
+  "success": false,
+  "message": "Không tìm thấy tài khoản"
+}
+```
+
+#### Create User - Without Authorization
 ```bash
 Response (401):
 {
   "success": false,
-  "message": "Email hoặc mật khẩu không đúng"
+  "message": "Không tìm thấy Token xác thực (Authorization Header)"
 }
 ```
 
@@ -110,6 +193,21 @@ Response (401):
 - ⏱️ Refresh Token hết hạn sau **7 ngày**
 - 🔒 Mật khẩu được mã hóa bằng **bcryptjs** (10 rounds)
 - 🗄️ Token được lưu trong **Postman Environment Variables**
+- 🔐 **Các API User Management cần:**
+  - Authorization Header: `Bearer {{accessToken}}`
+  - Admin Role: Chỉ admin mới có quyền tạo/cập nhật user
+  - Access Token phải còn hiệu lực (< 15 phút)
+
+---
+
+## 📚 API Endpoints
+
+| Endpoint | Method | Mô Tả | Auth |
+|----------|--------|-------|------|
+| `/api/auth/login` | POST | Đăng nhập, nhận Access + Refresh Token | ❌ |
+| `/api/auth/refresh-token` | POST | Làm mới Access Token | ❌ |
+| `/api/users` | POST | Tạo user mới | ✅ Admin |
+| `/api/users/:id` | PUT | Cập nhật user | ✅ Admin |
 
 ---
 

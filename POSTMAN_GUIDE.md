@@ -35,7 +35,9 @@ Collection có các biến sau (tự động set sau khi login):
 
 ## 🧪 Các API Tests Có Sẵn
 
-### 1. **Login** ✅
+### 📌 **Authentication Endpoints**
+
+#### 1. **Login** ✅
 - **Method:** POST
 - **Endpoint:** `/api/auth/login`
 - **Body:**
@@ -48,7 +50,7 @@ Collection có các biến sau (tự động set sau khi login):
 - **Kết quả:** Cấp Access Token + Refresh Token
 - **Tự động:** Lưu token vào environment
 
-### 2. **Refresh Token** ✅
+#### 2. **Refresh Token** ✅
 - **Method:** POST
 - **Endpoint:** `/api/auth/refresh-token`
 - **Body:**
@@ -60,12 +62,63 @@ Collection có các biến sau (tự động set sau khi login):
 - **Kết quả:** Cấp Access Token mới
 - **Tự động:** Cập nhật Access Token trong environment
 
-### 3. **Test Error - Invalid Email** ❌
+#### 3. **Test Error - Invalid Email** ❌
 - Kiểm tra xử lý email không tồn tại
 - **Kết quả mong muốn:** 401 Unauthorized
 
-### 4. **Test Error - Invalid Password** ❌
+#### 4. **Test Error - Invalid Password** ❌
 - Kiểm tra xử lý mật khẩu sai
+- **Kết quả mong muốn:** 401 Unauthorized
+
+---
+
+### 🔧 **User Management Endpoints** (Chỉ Admin)
+
+#### 5. **Create User** ✅ (Admin only)
+- **Method:** POST
+- **Endpoint:** `/api/users`
+- **Authorization:** `Bearer {{accessToken}}` (Admin token)
+- **Body:**
+```json
+{
+  "username": "officer@bacninh.gov.vn",
+  "fullName": "Trịnh Văn Công",
+  "password": "SecurePass@2024",
+  "role": "officer"
+}
+```
+- **Kết quả mong muốn:** 201 Created
+- **Tự động:** Lưu User ID vào `createdUserId`
+
+#### 6. **Create User - Duplicate Username** ❌ (Test Error)
+- Kiểm tra xử lý username đã tồn tại
+- **Kết quả mong muốn:** 409 Conflict
+
+#### 7. **Create User - Missing Fields** ❌ (Test Error)
+- Kiểm tra xử lý fields không đủ
+- **Kết quả mong muốn:** 400 Bad Request
+
+#### 8. **Update User** ✅ (Admin only)
+- **Method:** PUT
+- **Endpoint:** `/api/users/{{createdUserId}}`
+- **Authorization:** `Bearer {{accessToken}}` (Admin token)
+- **Body:**
+```json
+{
+  "fullName": "Trịnh Văn Công - Updated",
+  "role": "officer",
+  "password": "NewSecurePass@2024"
+}
+```
+- **Kết quả mong muốn:** 200 OK
+
+#### 9. **Update User - Not Found** ❌ (Test Error)
+- Kiểm tra xử lý user ID không tồn tại
+- **Endpoint:** `/api/users/9999`
+- **Kết quả mong muốn:** 404 Not Found
+
+#### 10. **Create User - Without Authorization** ❌ (Test Error)
+- Kiểm tra xử lý khi không gửi token
 - **Kết quả mong muốn:** 401 Unauthorized
 
 ---
@@ -84,8 +137,27 @@ Collection có các biến sau (tự động set sau khi login):
 3. Access Token sẽ tự động cập nhật
 4. Tiếp tục sử dụng token mới
 
-### Bước 3: Test Error Cases
+### Bước 3: Test Error Cases (Auth)
 1. Chọn **Test Error - Invalid Email** hoặc **Test Error - Invalid Password**
+2. Nhấn **Send**
+3. Xem Response để kiểm tra error handling
+
+### Bước 4: Create User (Admin Only)
+1. Đảm bảo đã Login với admin account
+2. Chọn request **Create User**
+3. (Tùy chọn) Chỉnh sửa body nếu muốn
+4. Nhấn **Send**
+5. ✅ Nếu thành công, User ID sẽ được lưu vào `createdUserId`
+
+### Bước 5: Update User (Admin Only)
+1. Phải tạo user trước (Bước 4)
+2. Chọn request **Update User**
+3. (Tùy chọn) Chỉnh sửa body nếu muốn
+4. Nhấn **Send**
+5. ✅ Xem response để kiểm tra update thành công
+
+### Bước 6: Test Error Cases (User Management)
+1. Chọn các test error case: **Duplicate Username**, **Missing Fields**, **Not Found**, **Without Authorization**
 2. Nhấn **Send**
 3. Xem Response để kiểm tra error handling
 

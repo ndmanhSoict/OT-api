@@ -10,7 +10,7 @@ dotenv.config();
 async function seedDatabase() {
   const dbName = process.env.DB_NAME || 'SHTT_db';
 
-  // 1. CHÚ Ý: Bỏ trường "database" ở đây để kết nối thẳng vào Server MySQL trước
+  // 1. Kết nối thẳng vào Server MySQL
   const connection = await mysql.createConnection({
     host: process.env.DB_HOST || '127.0.0.1',
     port: Number(process.env.DB_PORT) || 3308,
@@ -48,20 +48,25 @@ async function seedDatabase() {
     // 6. BƠM DỮ LIỆU MẪU (MOCK DATA)
     console.log('🌱 Đang bơm dữ liệu mẫu (Mock Data)...');
 
-    // -> 6.1. Thêm Users (Mã hóa mật khẩu bằng bcrypt)
+    // -> 6.1. Thêm Users (Sử dụng ID theo thời gian thực)
     const defaultPassword = process.env.DEFAULT_PASSWORD || 'Test@123';
     const bcryptRounds = parseInt(process.env.BCRYPT_ROUNDS || '10');
     const hashedPassword = await bcrypt.hash(defaultPassword, bcryptRounds);
 
-    console.log(`🔐 Mật khẩu mặc định được mã hóa: ${hashedPassword}`);
+    // Tạo 2 ID timestamp khác nhau một chút
+    const adminId = Date.now();
+    const staffId = Date.now() + 1;
+
+    console.log(`🔐 Tạo tài khoản Admin (ID: ${adminId}) và Staff (ID: ${staffId})`);
 
     await connection.query(`
-      INSERT INTO users (username, fullName, passwordHash, role) VALUES 
-      ('admin@bacninh.gov.vn', 'Admin Name', ?, 'admin'),
-      ('staff@bacninh.gov.vn', 'Staff Name', ?, 'staff')
-    `, [hashedPassword, hashedPassword]);
+      INSERT INTO users (id, username, fullName, passwordHash, role) VALUES 
+      (?, 'admin@bacninh.gov.vn', 'Admin Name', ?, 'admin'),
+      (?, 'staff@bacninh.gov.vn', 'Staff Name', ?, 'staff')
+    `, [adminId, hashedPassword, staffId, hashedPassword]);
 
     // -> 6.2. Thêm Chủ thể (Stakeholders)
+    // Stakeholders vẫn có thể dùng AUTO_INCREMENT hoặc bạn có thể sửa db.sql để dùng BIGINT tương tự
     await connection.query(`
       INSERT INTO stakeholders (name, address) VALUES 
       ('Nguyễn Văn A', 'Thành phố Bắc Ninh, Tỉnh Bắc Ninh'),
@@ -87,7 +92,6 @@ async function seedDatabase() {
       ('Quy trình nung gốm tiết kiệm năng lượng', 'SC-2022-100', '2022-06-20', 'SC-CB-100', '2022-08-20', 'SC-GC-100', '2024-01-15', 'C02F 1/00', 2, 'Đã cấp bằng', '[]')
     `);
 
-    // Thêm mảng tác giả cho Sáng Chế
     const newInventionId = inventionResult.insertId;
     await connection.query(`
       INSERT INTO inventionAuthors (inventionId, stakeholderId) VALUES 
@@ -99,7 +103,6 @@ async function seedDatabase() {
   } catch (error) {
     console.error('❌ Lỗi trong quá trình thao tác database:', error);
   } finally {
-    // Đóng kết nối để script tự động thoát
     await connection.end();
   }
 }

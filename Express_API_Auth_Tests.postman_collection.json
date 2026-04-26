@@ -139,6 +139,208 @@
           }
         }
       ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('createdUserId', jsonData.data.id);",
+                  "    console.log('✅ Create User successful!');",
+                  "    console.log('Created User ID:', jsonData.data.id);",
+                  "    console.log('Username:', jsonData.data.username);",
+                  "} else {",
+                  "    console.log('❌ Create User failed!');",
+                  "    console.log('Response:', pm.response.json());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"officer@bacninh.gov.vn\",\n  \"fullName\": \"Trịnh Văn Công\",\n  \"password\": \"SecurePass@2024\",\n  \"role\": \"officer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          }
+        },
+        {
+          "name": "Create User - Duplicate Username",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin@bacninh.gov.vn\",\n  \"fullName\": \"Duplicate Admin\",\n  \"password\": \"Password@2024\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          }
+        },
+        {
+          "name": "Create User - Missing Fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"incomplete_user\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    console.log('✅ Update User successful!');",
+                  "    console.log('Updated User ID:', jsonData.data.id);",
+                  "    console.log('Full Name:', jsonData.data.fullName);",
+                  "    console.log('Role:', jsonData.data.role);",
+                  "} else {",
+                  "    console.log('❌ Update User failed!');",
+                  "    console.log('Response:', pm.response.json());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Trịnh Văn Công - Updated\",\n  \"role\": \"officer\",\n  \"password\": \"NewSecurePass@2024\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{createdUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{createdUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User - Not Found",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Non-existent User\",\n  \"role\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/9999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "9999"]
+            }
+          }
+        },
+        {
+          "name": "Create User - Without Authorization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"unauthorized@bacninh.gov.vn\",\n  \"fullName\": \"Unauthorized User\",\n  \"password\": \"Password@2024\",\n  \"role\": \"staff\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [
@@ -159,6 +361,11 @@
     },
     {
       "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "createdUserId",
       "value": "",
       "type": "string"
     }
