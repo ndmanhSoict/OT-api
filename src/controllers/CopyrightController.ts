@@ -4,7 +4,7 @@ import { ResultSetHeader } from 'mysql2';
 
 export class CopyrightController {
   
-  // 1. [POST] /api/copyrights - TẠO MỚI (Admin/Staff)
+  // 1. [POST] /api/copyrights - TẠO MỚI
   static async createCopyright(req: Request, res: Response): Promise<void> {
     const connection = await pool.getConnection();
     try {
@@ -14,22 +14,21 @@ export class CopyrightController {
       const authors = JSON.parse(req.body.authors || '[]');
       const owners = JSON.parse(req.body.owners || '[]');
 
-      // Xử lý ảnh từ multer
       const files = req.files as Express.Multer.File[];
       const imageUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
 
       const copyrightId = Date.now();
 
-      // Lưu vào bảng chính
+      // Lưu vào bảng chính (Đã có id)
       await connection.query(
         'INSERT INTO copyrights (id, certificateNumber, grantDate, title, type, imageUrls) VALUES (?, ?, ?, ?, ?, ?)',
         [copyrightId, certificateNumber, grantDate, title, type, JSON.stringify(imageUrls)]
       );
 
-      // Hàm xử lý Stakeholders và liên kết
+      // Hàm xử lý Stakeholders (SỬA LỖI TẠI ĐÂY: Thêm ID cho Stakeholder)
       const handleStakeholders = async (list: any[], role: 'author' | 'owner') => {
+        let counter = 0;
         for (const item of list) {
-          // Tìm xem stakeholder đã tồn tại chưa (theo tên + địa chỉ)
           const [existing]: any = await connection.query(
             'SELECT id FROM stakeholders WHERE name = ? AND address = ?',
             [item.name, item.address]
@@ -39,14 +38,14 @@ export class CopyrightController {
           if (existing.length > 0) {
             stakeholderId = existing[0].id;
           } else {
-            const [insertRes]: any = await connection.query(
-              'INSERT INTO stakeholders (name, address) VALUES (?, ?)',
-              [item.name, item.address]
+            // TẠO ID MỚI CHO STAKEHOLDER (Tránh trùng bằng cách + counter)
+            stakeholderId = Date.now() + (counter++); 
+            await connection.query(
+              'INSERT INTO stakeholders (id, name, address) VALUES (?, ?, ?)',
+              [stakeholderId, item.name, item.address]
             );
-            stakeholderId = insertRes.insertId;
           }
 
-          // Tạo liên kết vào bảng copyrightAuthors
           await connection.query(
             'INSERT INTO copyrightAuthors (copyrightId, stakeholderId, role) VALUES (?, ?, ?)',
             [copyrightId, stakeholderId, role]
@@ -66,7 +65,6 @@ export class CopyrightController {
       connection.release();
     }
   }
-
   // 2. [GET] /api/copyrights/:id - XEM CHI TIẾT (Mọi vai trò)
   static async getCopyright(req: Request, res: Response): Promise<void> {
     try {
@@ -101,7 +99,7 @@ export class CopyrightController {
     }
   }
 
-  // 3. [PUT] /api/copyrights/:id - CẬP NHẬT (Admin/Staff)
+  // 2. [PUT] /api/copyrights/:id - CẬP NHẬT
   static async updateCopyright(req: Request, res: Response): Promise<void> {
     const connection = await pool.getConnection();
     try {
@@ -111,34 +109,38 @@ export class CopyrightController {
       const authors = JSON.parse(req.body.authors || '[]');
       const owners = JSON.parse(req.body.owners || '[]');
 
-      // Kiểm tra xem bản quyền có tồn tại không
       const [existing]: any = await connection.query('SELECT imageUrls FROM copyrights WHERE id = ?', [id]);
       if (existing.length === 0) {
-        res.status(404).json({ success: false, message: 'Không tìm thấy bản quyền' });
+        res.status(404).json({ success: false, message: 'Không tìm thấy' });
         return;
       }
 
-      // Xử lý ảnh (Nếu có upload mới thì thay thế, nếu không thì giữ nguyên cũ)
       const files = req.files as Express.Multer.File[];
       let finalImageUrls = existing[0].imageUrls;
       if (files && files.length > 0) {
-        const newImages = files.map(file => `/uploads/${file.filename}`);
-        finalImageUrls = JSON.stringify(newImages);
+        finalImageUrls = JSON.stringify(files.map(file => `/uploads/${file.filename}`));
       }
 
-      // Cập nhật bảng chính
       await connection.query(
         'UPDATE copyrights SET certificateNumber = ?, grantDate = ?, title = ?, type = ?, imageUrls = ? WHERE id = ?',
         [certificateNumber, grantDate, title, type, finalImageUrls, id]
       );
 
-      // Xử lý lại Stakeholders: Cách an toàn nhất là xóa liên kết cũ và tạo lại
       await connection.query('DELETE FROM copyrightAuthors WHERE copyrightId = ?', [id]);
 
       const handleStakeholders = async (list: any[], role: 'author' | 'owner') => {
+        let counter = 0;
         for (const item of list) {
           const [sExist]: any = await connection.query('SELECT id FROM stakeholders WHERE name = ? AND address = ?', [item.name, item.address]);
-          let sId = sExist.length > 0 ? sExist[0].id : (await connection.query('INSERT INTO stakeholders (name, address) VALUES (?, ?)', [item.name, item.address]) as any)[0].insertId;
+          
+          let sId;
+          if (sExist.length > 0) {
+            sId = sExist[0].id;
+          } else {
+            // SỬA LỖI TẠI ĐÂY: Thêm ID khi tạo Stakeholder mới trong lúc Update
+            sId = Date.now() + (counter++);
+            await connection.query('INSERT INTO stakeholders (id, name, address) VALUES (?, ?, ?)', [sId, item.name, item.address]);
+          }
           await connection.query('INSERT INTO copyrightAuthors (copyrightId, stakeholderId, role) VALUES (?, ?, ?)', [id, sId, role]);
         }
       };
@@ -147,10 +149,10 @@ export class CopyrightController {
       await handleStakeholders(owners, 'owner');
 
       await connection.commit();
-      res.status(200).json({ success: true, message: 'Cập nhật bản quyền thành công' });
+      res.status(200).json({ success: true, message: 'Cập nhật thành công' });
     } catch (error: any) {
       await connection.rollback();
-      res.status(500).json({ success: false, message: 'Lỗi khi cập nhật', error: error.message });
+      res.status(500).json({ success: false, message: 'Lỗi cập nhật', error: error.message });
     } finally {
       connection.release();
     }

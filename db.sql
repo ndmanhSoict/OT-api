@@ -1,7 +1,6 @@
 -- 1. BẢNG TÀI KHOẢN VÀ CHỦ THỂ
--- Sửa lại bảng users
 CREATE TABLE users (
-    id BIGINT PRIMARY KEY, -- Sử dụng BIGINT để chứa timestamp và không dùng AUTO_INCREMENT
+    id BIGINT PRIMARY KEY, 
     username VARCHAR(255) UNIQUE NOT NULL,
     fullName VARCHAR(255) NOT NULL,
     passwordHash VARCHAR(255) NOT NULL,
@@ -9,38 +8,34 @@ CREATE TABLE users (
 );
 
 CREATE TABLE stakeholders (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     address TEXT
 );
 
--- ==========================================
--- CÁC BẢNG DỮ LIỆU CHÍNH
--- ==========================================
-
 -- 2. BẢN QUYỀN TÁC GIẢ
 CREATE TABLE copyrights (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT PRIMARY KEY, -- Sửa thành BIGINT
     certificateNumber VARCHAR(100),
     grantDate DATE,
     title VARCHAR(255),
     type VARCHAR(100),
-    ownerId INT, 
+    ownerId BIGINT, -- Cùng kiểu BIGINT với stakeholders(id)
     imageUrls TEXT,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
 );
 
 -- 3. CHỈ DẪN ĐỊA LÝ
 CREATE TABLE geographicalIndications (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     name VARCHAR(255),
     product VARCHAR(255),
     applicationNumber VARCHAR(100),
     applicationDate DATE,
     certificateNumber VARCHAR(100),
     grantDate DATE,
-    ownerId INT,
-    managementOrgId INT,
+    ownerId BIGINT,
+    managementOrgId BIGINT,
     geographicalArea TEXT,
     description TEXT,
     status VARCHAR(100),
@@ -51,7 +46,7 @@ CREATE TABLE geographicalIndications (
 
 -- 4. NHÃN HIỆU
 CREATE TABLE trademarks (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     trademarkSample TEXT,
     name VARCHAR(255),
     type VARCHAR(100),
@@ -64,7 +59,7 @@ CREATE TABLE trademarks (
     expirationDate DATE,
     productServiceGroup TEXT,
     classification VARCHAR(100),
-    ownerId INT,
+    ownerId BIGINT,
     status VARCHAR(100),
     imageUrls TEXT,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
@@ -72,7 +67,7 @@ CREATE TABLE trademarks (
 
 -- 5. SÁNG CHẾ / GIẢI PHÁP HỮU ÍCH
 CREATE TABLE inventions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     name VARCHAR(255),
     applicationNumber VARCHAR(100),
     applicationDate DATE,
@@ -81,7 +76,7 @@ CREATE TABLE inventions (
     certificateNumber VARCHAR(100),
     grantDate DATE,
     ipcClassification VARCHAR(100),
-    ownerId INT,
+    ownerId BIGINT,
     status VARCHAR(100),
     imageUrls TEXT,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
@@ -89,7 +84,7 @@ CREATE TABLE inventions (
 
 -- 6. KIỂU DÁNG CÔNG NGHIỆP
 CREATE TABLE industrialDesigns (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     name VARCHAR(255),
     applicationNumber VARCHAR(100),
     applicationDate DATE,
@@ -99,7 +94,7 @@ CREATE TABLE industrialDesigns (
     grantDate DATE,
     expirationDate DATE,
     locarnoClassification VARCHAR(100),
-    ownerId INT,
+    ownerId BIGINT,
     status VARCHAR(100),
     imageUrls TEXT,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
@@ -107,7 +102,7 @@ CREATE TABLE industrialDesigns (
 
 -- 7. LÀNG NGHỀ
 CREATE TABLE craftVillages (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT PRIMARY KEY,
     name VARCHAR(255),
     product VARCHAR(255),
     address TEXT,
@@ -116,32 +111,27 @@ CREATE TABLE craftVillages (
     imageUrls TEXT
 );
 
--- ==========================================
--- CÁC BẢNG TRUNG GIAN (Xử lý Mảng Tác giả)
--- ==========================================
-
--- Bảng lưu mảng tác giả cho Bản quyền
+-- Bảng trung gian (Xử lý Mảng Tác giả)
 CREATE TABLE copyrightAuthors (
-    copyrightId INT,
-    stakeholderId INT,
-    PRIMARY KEY (copyrightId, stakeholderId),
+    copyrightId BIGINT, -- Khớp kiểu BIGINT
+    stakeholderId BIGINT, -- Khớp kiểu BIGINT
+    role VARCHAR(50),
+    PRIMARY KEY (copyrightId, stakeholderId, role),
     FOREIGN KEY (copyrightId) REFERENCES copyrights(id) ON DELETE CASCADE,
     FOREIGN KEY (stakeholderId) REFERENCES stakeholders(id) ON DELETE CASCADE
 );
 
--- Bảng lưu mảng tác giả cho Sáng chế
 CREATE TABLE inventionAuthors (
-    inventionId INT,
-    stakeholderId INT,
+    inventionId BIGINT,
+    stakeholderId BIGINT,
     PRIMARY KEY (inventionId, stakeholderId),
     FOREIGN KEY (inventionId) REFERENCES inventions(id) ON DELETE CASCADE,
     FOREIGN KEY (stakeholderId) REFERENCES stakeholders(id) ON DELETE CASCADE
 );
 
--- Bảng lưu mảng tác giả cho Kiểu dáng công nghiệp
 CREATE TABLE industrialDesignAuthors (
-    industrialDesignId INT,
-    stakeholderId INT,
+    industrialDesignId BIGINT,
+    stakeholderId BIGINT,
     PRIMARY KEY (industrialDesignId, stakeholderId),
     FOREIGN KEY (industrialDesignId) REFERENCES industrialDesigns(id) ON DELETE CASCADE,
     FOREIGN KEY (stakeholderId) REFERENCES stakeholders(id) ON DELETE CASCADE
