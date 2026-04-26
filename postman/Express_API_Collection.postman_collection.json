@@ -1,0 +1,828 @@
+{
+  "info": {
+    "_postman_id": "express-api-full-collection",
+    "name": "Express API - Full Collection",
+    "description": "Collection đầy đủ để test tất cả API: Auth, Users (Admin), Copyrights (Admin/Staff)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "createdUserId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "copyrightId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Welcome",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
+                  "    pm.collectionVariables.set('userId', jsonData.data.user.id);",
+                  "    console.log('Login thanh cong!');",
+                  "    console.log('Access Token:', jsonData.data.accessToken);",
+                  "} else {",
+                  "    console.log('Login that bai!');",
+                  "    console.log('Response:', pm.response.json());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Test@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    console.log('Refresh Token thanh cong!');",
+                  "    console.log('New Access Token:', jsonData.data.accessToken);",
+                  "} else {",
+                  "    console.log('Refresh Token that bai!');",
+                  "    console.log('Response:', pm.response.json());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh-token"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Sai username",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"khong_ton_tai\",\n  \"password\": \"Test@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Sai password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"SaiMatKhau\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token - Token het han",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"token_het_han_hoac_khong_hop_le\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh-token"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Management (Admin only)",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('createdUserId', jsonData.data.id);",
+                  "    console.log('Tao user thanh cong!');",
+                  "    console.log('User ID:', jsonData.data.id);",
+                  "} else {",
+                  "    console.log('Tao user that bai!');",
+                  "    console.log('Response:', pm.response.json());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"staff_user\",\n  \"fullName\": \"Nguyen Van A\",\n  \"password\": \"SecurePass@2024\",\n  \"role\": \"staff\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{createdUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{createdUserId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    console.log('Cap nhat user thanh cong!');",
+                  "    console.log('Full Name:', jsonData.data.fullName);",
+                  "    console.log('Role:', jsonData.data.role);",
+                  "} else {",
+                  "    console.log('Cap nhat user that bai!');",
+                  "    console.log('Response:', pm.response.json());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Nguyen Van A - Da cap nhat\",\n  \"role\": \"staff\",\n  \"password\": \"NewSecurePass@2024\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{createdUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{createdUserId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{createdUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{createdUserId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User - Username trung lap",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"fullName\": \"Duplicate Admin\",\n  \"password\": \"Password@2024\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User - Thieu thong tin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"incomplete_user\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User - Khong tim thay (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/9999999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "9999999999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User - Khong co token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"no_token_user\",\n  \"fullName\": \"No Token User\",\n  \"password\": \"Password@2024\",\n  \"role\": \"staff\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Copyright Management (Admin/Staff)",
+      "item": [
+        {
+          "name": "Get Copyright by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/copyrights/{{copyrightId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "copyrights", "{{copyrightId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Copyright (co anh)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('copyrightId', jsonData.id);",
+                  "    console.log('Tao ban quyen thanh cong!');",
+                  "    console.log('Copyright ID:', jsonData.id);",
+                  "} else {",
+                  "    console.log('Tao ban quyen that bai!');",
+                  "    console.log('Response:', pm.response.json());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "certificateNumber",
+                  "value": "BQ-2024-001",
+                  "type": "text"
+                },
+                {
+                  "key": "grantDate",
+                  "value": "2024-01-15",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Phan mem quan ly van ban",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "software",
+                  "type": "text"
+                },
+                {
+                  "key": "authors",
+                  "value": "[{\"name\": \"Nguyen Van A\", \"address\": \"123 Le Loi, Ha Noi\"}, {\"name\": \"Tran Thi B\", \"address\": \"456 Tran Hung Dao, Ha Noi\"}]",
+                  "type": "text"
+                },
+                {
+                  "key": "owners",
+                  "value": "[{\"name\": \"Cong ty TNHH ABC\", \"address\": \"789 Nguyen Hue, TP.HCM\"}]",
+                  "type": "text"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": [],
+                  "description": "Chon file anh (toi da 5 anh)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/copyrights",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "copyrights"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Copyright (khong anh)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('copyrightId', jsonData.id);",
+                  "    console.log('Tao ban quyen thanh cong!');",
+                  "    console.log('Copyright ID:', jsonData.id);",
+                  "} else {",
+                  "    console.log('Tao ban quyen that bai!');",
+                  "    console.log('Response:', pm.response.json());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "certificateNumber",
+                  "value": "BQ-2024-002",
+                  "type": "text"
+                },
+                {
+                  "key": "grantDate",
+                  "value": "2024-03-20",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Sach giao khoa toan hoc",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "book",
+                  "type": "text"
+                },
+                {
+                  "key": "authors",
+                  "value": "[{\"name\": \"Le Van C\", \"address\": \"101 Dinh Tien Hoang, Ha Noi\"}]",
+                  "type": "text"
+                },
+                {
+                  "key": "owners",
+                  "value": "[{\"name\": \"NXB Giao duc Viet Nam\", \"address\": \"81 Tran Hung Dao, Ha Noi\"}]",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/copyrights",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "copyrights"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Copyright",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "certificateNumber",
+                  "value": "BQ-2024-001-V2",
+                  "type": "text"
+                },
+                {
+                  "key": "grantDate",
+                  "value": "2024-06-01",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Phan mem quan ly van ban - Ban cap nhat",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "software",
+                  "type": "text"
+                },
+                {
+                  "key": "authors",
+                  "value": "[{\"name\": \"Nguyen Van A\", \"address\": \"123 Le Loi, Ha Noi\"}, {\"name\": \"Pham Thi D\", \"address\": \"222 Ba Trieu, Ha Noi\"}]",
+                  "type": "text"
+                },
+                {
+                  "key": "owners",
+                  "value": "[{\"name\": \"Cong ty TNHH ABC\", \"address\": \"789 Nguyen Hue, TP.HCM\"}]",
+                  "type": "text"
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": [],
+                  "description": "Neu khong chon anh moi, anh cu se duoc giu lai"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/copyrights/{{copyrightId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "copyrights", "{{copyrightId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Copyright",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/copyrights/{{copyrightId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "copyrights", "{{copyrightId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Copyright - Khong tim thay (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/copyrights/9999999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "copyrights", "9999999999"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Copyright - Khong co token (403)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "certificateNumber",
+                  "value": "BQ-2024-NO-AUTH",
+                  "type": "text"
+                },
+                {
+                  "key": "grantDate",
+                  "value": "2024-01-01",
+                  "type": "text"
+                },
+                {
+                  "key": "title",
+                  "value": "Test khong co token",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "test",
+                  "type": "text"
+                },
+                {
+                  "key": "authors",
+                  "value": "[]",
+                  "type": "text"
+                },
+                {
+                  "key": "owners",
+                  "value": "[]",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/copyrights",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "copyrights"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

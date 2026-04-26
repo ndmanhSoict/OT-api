@@ -99,52 +99,50 @@ export class UserController {
 
   // Thêm vào trong class UserController
 
-// [GET] /api/users/:id - Xem chi tiết tài khoản
-static async getUserById(req: Request, res: Response): Promise<void> {
-  try {
-    const userId = req.params.id;
+    // [GET] /api/users/:id - Xem chi tiết tài khoản
+    static async getUserById(req: Request, res: Response): Promise<void> {
+    try {
+        const userId = req.params.id;
 
-    const [users]: any = await pool.query(
-      'SELECT id, username, fullName, role FROM users WHERE id = ?',
-      [userId]
-    );
+        const [users]: any = await pool.query(
+        'SELECT id, username, fullName, role FROM users WHERE id = ?',
+        [userId]
+        );
 
-    if (users.length === 0) {
-      res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản' });
-      return;
+        if (users.length === 0) {
+        res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản' });
+        return;
+        }
+
+        res.status(200).json({
+        success: true,
+        data: users[0]
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+    }
     }
 
-    res.status(200).json({
-      success: true,
-      data: users[0]
-    });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
-  }
-}
+    // [DELETE] /api/users/:id - Xóa tài khoản
+    static async deleteUser(req: Request, res: Response): Promise<void> {
+    try {
+        const userId = req.params.id;
 
-// [DELETE] /api/users/:id - Xóa tài khoản
-static async deleteUser(req: Request, res: Response): Promise<void> {
-  try {
-    const userId = req.params.id;
+        // Kiểm tra tồn tại trước khi xóa
+        const [users]: any = await pool.query('SELECT id FROM users WHERE id = ?', [userId]);
+        if (users.length === 0) {
+        res.status(404).json({ success: false, message: 'Tài khoản không tồn tại' });
+        return;
+        }
 
-    // Kiểm tra tồn tại trước khi xóa
-    const [users]: any = await pool.query('SELECT id FROM users WHERE id = ?', [userId]);
-    if (users.length === 0) {
-      res.status(404).json({ success: false, message: 'Tài khoản không tồn tại' });
-      return;
+        await pool.query('DELETE FROM users WHERE id = ?', [userId]);
+
+        res.status(200).json({
+        success: true,
+        message: 'Xóa tài khoản thành công'
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
     }
-
-    await pool.query('DELETE FROM users WHERE id = ?', [userId]);
-
-    res.status(200).json({
-      success: true,
-      message: 'Xóa tài khoản thành công'
-    });
-  } catch (error: any) {
-    res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
   }
-}
-
-  
 }

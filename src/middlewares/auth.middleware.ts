@@ -38,3 +38,14 @@ export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction): vo
     });
   }
 };
+
+export const isAdminOrStaff = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
+    next(); // Hợp lệ, cho phép đi tiếp
+  } else {
+    res.status(403).json({ 
+      success: false, 
+      message: 'Truy cập bị từ chối. Chỉ Admin hoặc Staff mới có quyền thực hiện thao tác này!' 
+    });
+  }
+};
