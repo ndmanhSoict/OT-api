@@ -1,9 +1,75 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
-import { ResultSetHeader } from 'mysql2';
 
 export class CopyrightController {
-  
+
+  // [GET] /api/copyrights/search?q=... - TÌM KIẾM
+  static async search(req: Request, res: Response): Promise<void> {
+    try {
+      const allowedFields: Record<string, string> = {
+        certificateNumber: 'certificateNumber',
+        title: 'title',
+        type: 'type',
+        grantDate: 'CAST(grantDate AS CHAR)',
+      };
+
+      const conditions: string[] = [];
+      const values: string[] = [];
+
+      for (const [key, col] of Object.entries(allowedFields)) {
+        const val = ((req.query[key] as string) ?? '').trim();
+        if (val) {
+          conditions.push(`${col} LIKE ?`);
+          values.push(`%${val}%`);
+        }
+      }
+
+      if (conditions.length === 0) {
+        res.status(400).json({ success: false, message: `Cần truyền ít nhất một trường tìm kiếm. Các trường hợp lệ: ${Object.keys(allowedFields).join(', ')}` });
+        return;
+      }
+
+      const [rows]: any = await pool.query(
+        `SELECT * FROM copyrights WHERE ${conditions.join(' AND ')}`,
+        values
+      );
+      res.status(200).json({ success: true, data: rows });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: 'Lỗi tìm kiếm', error: error.message });
+    }
+  }
+
+  // [GET] /api/copyrights/search-all?q=... - TÌM KIẾM TOÀN BỘ (Admin/Staff)
+  static async searchAll(req: Request, res: Response): Promise<void> {
+    try {
+      const rawQ = ((req.query.q as string) ?? '').trim();
+      if (!rawQ) {
+        res.status(400).json({ success: false, message: 'Cần truyền tham số q' });
+        return;
+      }
+      const q = `%${rawQ}%`;
+      const [rows]: any = await pool.query(
+        `SELECT * FROM copyrights
+         WHERE certificateNumber LIKE ? OR title LIKE ? OR type LIKE ?
+            OR CAST(grantDate AS CHAR) LIKE ?`,
+        [q, q, q, q]
+      );
+      res.status(200).json({ success: true, data: rows });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: 'Lỗi tìm kiếm', error: error.message });
+    }
+  }
+
+  // [GET] /api/copyrights - DANH SÁCH
+  static async getAll(_req: Request, res: Response): Promise<void> {
+    try {
+      const [rows]: any = await pool.query('SELECT * FROM copyrights ORDER BY id DESC');
+      res.status(200).json({ success: true, data: rows });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+    }
+  }
+
   // 1. [POST] /api/copyrights - TẠO MỚI
   static async createCopyright(req: Request, res: Response): Promise<void> {
     const connection = await pool.getConnection();

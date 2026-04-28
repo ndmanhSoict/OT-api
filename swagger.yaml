@@ -1,0 +1,3045 @@
+openapi: 3.0.3
+info:
+  title: SHTT API - Quản lý Sở hữu Trí tuệ
+  description: |
+    API quản lý Sở hữu Trí tuệ gồm: Bản quyền tác giả, Nhãn hiệu, Sáng chế,
+    Kiểu dáng công nghiệp, Chỉ dẫn địa lý, Làng nghề truyền thống.
+
+    ## Xác thực
+    Sử dụng **JWT Bearer Token**. Đăng nhập qua `/api/auth/login` để lấy `accessToken`,
+    sau đó nhấn nút **Authorize** và nhập `Bearer <token>`.
+
+    ## Phân quyền
+    | Nhóm endpoint | Quyền yêu cầu |
+    |---|---|
+    | GET /search, GET /, GET /:id | Công khai |
+    | GET /search-all | Admin hoặc Staff |
+    | POST / PUT / DELETE (IP resources) | Admin hoặc Staff |
+    | Mọi thao tác /api/users | Chỉ Admin |
+
+    ## Upload ảnh
+    Các endpoint POST/PUT sử dụng `multipart/form-data`.
+    Trường `owner`, `authors`, `managementOrg` truyền dưới dạng **JSON string** trong form.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local Development
+
+tags:
+  - name: Health
+    description: Kiểm tra hệ thống
+  - name: Auth
+    description: Đăng nhập & làm mới token
+  - name: Users
+    description: Quản lý tài khoản (Admin only)
+  - name: Stakeholders
+    description: Quản lý Chủ thể (tác giả, chủ sở hữu, tổ chức)
+  - name: Copyrights
+    description: Bản quyền tác giả
+  - name: Craft Villages
+    description: Làng nghề truyền thống
+  - name: Trademarks
+    description: Nhãn hiệu
+  - name: Geographical Indications
+    description: Chỉ dẫn địa lý
+  - name: Inventions
+    description: Sáng chế / Giải pháp hữu ích
+  - name: Industrial Designs
+    description: Kiểu dáng công nghiệp
+
+# ─────────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Access Token lấy từ POST /api/auth/login
+
+  schemas:
+
+    # ── Chung ──────────────────────────────────
+    SuccessMessage:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Thao tác thành công
+
+    SuccessWithId:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        id:
+          type: integer
+          format: int64
+          example: 1714200000000
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Lỗi server
+        error:
+          type: string
+          example: Error detail
+
+    # ── Stakeholder ─────────────────────────────
+    StakeholderBody:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Nguyễn Văn A
+        address:
+          type: string
+          example: 123 Lê Lợi, Hà Nội
+
+    StakeholderObject:
+      allOf:
+        - $ref: '#/components/schemas/StakeholderBody'
+        - type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+              example: 1714200000001
+
+    StakeholderListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StakeholderObject'
+
+    StakeholderDetailResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/StakeholderObject'
+
+    # ── User ────────────────────────────────────
+    UserObject:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1714100000000
+        username:
+          type: string
+          example: admin
+        fullName:
+          type: string
+          example: Quản trị viên
+        role:
+          type: string
+          enum: [admin, staff]
+          example: admin
+
+    # ── Copyright ───────────────────────────────
+    CopyrightDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        certificateNumber:
+          type: string
+          example: BQ-2024-001
+        grantDate:
+          type: string
+          format: date
+          example: "2024-01-15"
+        title:
+          type: string
+          example: Phần mềm quản lý nhà hàng
+        type:
+          type: string
+          example: software
+        imageUrls:
+          type: string
+          description: JSON array lưu đường dẫn ảnh
+          example: '["/uploads/img1.jpg"]'
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/StakeholderObject'
+        owners:
+          type: array
+          items:
+            $ref: '#/components/schemas/StakeholderObject'
+
+    # ── Craft Village ────────────────────────────
+    CraftVillageDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Làng gốm Bát Tràng
+        product:
+          type: string
+          example: Đồ gốm sứ mỹ nghệ
+        address:
+          type: string
+          example: Xã Bát Tràng, Huyện Gia Lâm, Hà Nội
+        certificateNumber:
+          type: string
+          example: LN-HN-001
+        recognitionDate:
+          type: string
+          format: date
+          example: "2010-05-20"
+        imageUrls:
+          type: string
+
+    # ── Trademark ───────────────────────────────
+    TrademarkDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        trademarkSample:
+          type: string
+          example: Logo chữ VINAMILK màu xanh dương
+        name:
+          type: string
+          example: VINAMILK
+        type:
+          type: string
+          example: Nhãn hiệu hàng hóa
+        applicationNumber:
+          type: string
+          example: 4-2024-10001
+        applicationDate:
+          type: string
+          format: date
+        publicationNumber:
+          type: string
+          example: PB-2024-10001
+        publicationDate:
+          type: string
+          format: date
+        certificateNumber:
+          type: string
+          example: NH-2024-10001
+        grantDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        productServiceGroup:
+          type: string
+          example: Nhóm 29 - Sữa và các sản phẩm từ sữa
+        classification:
+          type: string
+          example: Nhóm 29
+        status:
+          type: string
+          example: Đã cấp văn bằng
+        imageUrls:
+          type: string
+        owner:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/StakeholderObject'
+
+    # ── Geographical Indication ──────────────────
+    GeographicalIndicationDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Nước mắm Phú Quốc
+        product:
+          type: string
+          example: Nước mắm
+        applicationNumber:
+          type: string
+          example: CDDL-2024-001
+        applicationDate:
+          type: string
+          format: date
+        certificateNumber:
+          type: string
+          example: CDDL-PQ-001
+        grantDate:
+          type: string
+          format: date
+        geographicalArea:
+          type: string
+          example: Đảo Phú Quốc, tỉnh Kiên Giang
+        description:
+          type: string
+          example: Nước mắm truyền thống sản xuất tại đảo Phú Quốc
+        status:
+          type: string
+          example: Đã đăng ký
+        imageUrls:
+          type: string
+        owner:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/StakeholderObject'
+        managementOrg:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/StakeholderObject'
+
+    # ── Invention ───────────────────────────────
+    InventionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Hệ thống thu hồi năng lượng mặt trời hiệu suất cao
+        applicationNumber:
+          type: string
+          example: 1-2024-05001
+        applicationDate:
+          type: string
+          format: date
+        publicationNumber:
+          type: string
+          example: PB-SC-2024-05001
+        publicationDate:
+          type: string
+          format: date
+        certificateNumber:
+          type: string
+          example: SC-2024-05001
+        grantDate:
+          type: string
+          format: date
+        ipcClassification:
+          type: string
+          example: H02S 40/00
+        status:
+          type: string
+          example: Đã cấp bằng độc quyền sáng chế
+        imageUrls:
+          type: string
+        owner:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/StakeholderObject'
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/StakeholderObject'
+
+    # ── Industrial Design ────────────────────────
+    IndustrialDesignDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Kiểu dáng chai nước giải khát hình sóng biển
+        applicationNumber:
+          type: string
+          example: 2-2024-20001
+        applicationDate:
+          type: string
+          format: date
+        publicationNumber:
+          type: string
+          example: PB-KD-2024-20001
+        publicationDate:
+          type: string
+          format: date
+        certificateNumber:
+          type: string
+          example: KD-2024-20001
+        grantDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        locarnoClassification:
+          type: string
+          example: 09-01
+        status:
+          type: string
+          example: Đã cấp bằng độc quyền kiểu dáng
+        imageUrls:
+          type: string
+        owner:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/StakeholderObject'
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/StakeholderObject'
+
+    # ── Row schemas (list / search — không có quan hệ lồng nhau) ─
+    CopyrightRow:
+      type: object
+      description: Hàng dữ liệu thô từ bảng copyrights, không có authors/owners lồng nhau
+      properties:
+        id:
+          type: integer
+          format: int64
+        certificateNumber:
+          type: string
+          example: BQ-2024-001
+        grantDate:
+          type: string
+          format: date
+          example: "2024-01-15"
+        title:
+          type: string
+          example: Phần mềm quản lý nhà hàng
+        type:
+          type: string
+          example: software
+        imageUrls:
+          type: string
+          description: JSON array string chứa đường dẫn ảnh
+          example: '["/uploads/img1.jpg"]'
+
+    TrademarkRow:
+      type: object
+      description: Hàng dữ liệu thô từ bảng trademarks, chứa ownerId thay vì object owner
+      properties:
+        id:
+          type: integer
+          format: int64
+        trademarkSample:
+          type: string
+          example: Logo chữ VINAMILK màu xanh dương
+        name:
+          type: string
+          example: VINAMILK
+        type:
+          type: string
+          example: Nhãn hiệu hàng hóa
+        applicationNumber:
+          type: string
+          example: 4-2024-10001
+        applicationDate:
+          type: string
+          format: date
+        publicationNumber:
+          type: string
+        publicationDate:
+          type: string
+          format: date
+        certificateNumber:
+          type: string
+          example: NH-2024-10001
+        grantDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        productServiceGroup:
+          type: string
+          example: Nhóm 29 - Sữa và các sản phẩm từ sữa
+        classification:
+          type: string
+          example: Nhóm 29
+        status:
+          type: string
+          example: Đã cấp văn bằng
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 1714200000002
+        imageUrls:
+          type: string
+
+    GeographicalIndicationRow:
+      type: object
+      description: Hàng dữ liệu thô từ bảng geographicalIndications, chứa ownerId/managementOrgId
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Nước mắm Phú Quốc
+        product:
+          type: string
+          example: Nước mắm
+        applicationNumber:
+          type: string
+          example: CDDL-2024-001
+        applicationDate:
+          type: string
+          format: date
+        certificateNumber:
+          type: string
+          example: CDDL-PQ-001
+        grantDate:
+          type: string
+          format: date
+        geographicalArea:
+          type: string
+          example: Đảo Phú Quốc, tỉnh Kiên Giang
+        description:
+          type: string
+        status:
+          type: string
+          example: Đã đăng ký
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
+        managementOrgId:
+          type: integer
+          format: int64
+          nullable: true
+        imageUrls:
+          type: string
+
+    InventionRow:
+      type: object
+      description: Hàng dữ liệu thô từ bảng inventions, chứa ownerId, không có authors array
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Hệ thống thu hồi năng lượng mặt trời hiệu suất cao
+        applicationNumber:
+          type: string
+          example: 1-2024-05001
+        applicationDate:
+          type: string
+          format: date
+        publicationNumber:
+          type: string
+        publicationDate:
+          type: string
+          format: date
+        certificateNumber:
+          type: string
+          example: SC-2024-05001
+        grantDate:
+          type: string
+          format: date
+        ipcClassification:
+          type: string
+          example: H02S 40/00
+        status:
+          type: string
+          example: Đã cấp bằng độc quyền sáng chế
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
+        imageUrls:
+          type: string
+
+    IndustrialDesignRow:
+      type: object
+      description: Hàng dữ liệu thô từ bảng industrialDesigns, chứa ownerId, không có authors array
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Kiểu dáng chai nước giải khát hình sóng biển
+        applicationNumber:
+          type: string
+          example: 2-2024-20001
+        applicationDate:
+          type: string
+          format: date
+        publicationNumber:
+          type: string
+        publicationDate:
+          type: string
+          format: date
+        certificateNumber:
+          type: string
+          example: KD-2024-20001
+        grantDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        locarnoClassification:
+          type: string
+          example: 09-01
+        status:
+          type: string
+          example: Đã cấp bằng độc quyền kiểu dáng
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
+        imageUrls:
+          type: string
+
+  # ── Reusable responses ──────────────────────
+  responses:
+    Unauthorized:
+      description: Chưa xác thực — thiếu hoặc sai token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Unauthorized
+    NotFound:
+      description: Không tìm thấy tài nguyên
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Không tìm thấy
+    ServerError:
+      description: Lỗi server nội bộ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Lỗi server
+            error: Error detail
+
+# ─────────────────────────────────────────────
+# PATHS
+# ─────────────────────────────────────────────
+paths:
+
+  # ════════════════════════════════
+  # HEALTH
+  # ════════════════════════════════
+  /:
+    get:
+      tags: [Health]
+      summary: Welcome message
+      operationId: getWelcome
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Welcome to Express API
+
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Kiểm tra trạng thái server
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Server đang hoạt động
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # ════════════════════════════════
+  # AUTH
+  # ════════════════════════════════
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Đăng nhập
+      operationId: login
+      description: Trả về `accessToken` (hết hạn sau 15 phút) và `refreshToken` (7 ngày).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  example: Test@123
+      responses:
+        '200':
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Đăng nhập thành công
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/UserObject'
+                      accessToken:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiJ9...
+                      refreshToken:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiJ9...
+        '400':
+          description: Thiếu username hoặc password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Sai username hoặc mật khẩu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/auth/refresh-token:
+    post:
+      tags: [Auth]
+      summary: Làm mới Access Token
+      operationId: refreshToken
+      description: Dùng `refreshToken` để lấy `accessToken` mới mà không cần đăng nhập lại.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+                  example: eyJhbGciOiJIUzI1NiJ9...
+      responses:
+        '200':
+          description: Cấp token mới thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      accessToken:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiJ9...
+        '401':
+          description: Không có refreshToken trong body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: RefreshToken không hợp lệ hoặc đã hết hạn
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ════════════════════════════════
+  # USERS
+  # ════════════════════════════════
+  /api/users:
+    post:
+      tags: [Users]
+      summary: Tạo tài khoản mới
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, fullName, password, role]
+              properties:
+                username:
+                  type: string
+                  example: staff_user
+                fullName:
+                  type: string
+                  example: Nguyễn Văn A
+                password:
+                  type: string
+                  example: SecurePass@2024
+                role:
+                  type: string
+                  enum: [admin, staff]
+                  example: staff
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Tạo tài khoản thành công
+                  data:
+                    $ref: '#/components/schemas/UserObject'
+        '400':
+          description: Thiếu thông tin bắt buộc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Username đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID người dùng (timestamp milliseconds)
+        example: 1714100000000
+    get:
+      tags: [Users]
+      summary: Xem chi tiết tài khoản
+      operationId: getUserById
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/UserObject'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Users]
+      summary: Cập nhật tài khoản
+      operationId: updateUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                  example: Nguyễn Văn A - Đã cập nhật
+                role:
+                  type: string
+                  enum: [admin, staff]
+                password:
+                  type: string
+                  description: Bỏ trống nếu không đổi mật khẩu
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Cập nhật tài khoản thành công
+                  data:
+                    $ref: '#/components/schemas/UserObject'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Users]
+      summary: Xóa tài khoản
+      operationId: deleteUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ════════════════════════════════
+  # STAKEHOLDERS
+  # ════════════════════════════════
+  /api/stakeholders/search:
+    get:
+      tags: [Stakeholders]
+      summary: Tìm kiếm chủ thể
+      operationId: searchStakeholders
+      description: Tìm đồng thời trên các trường `name`, `address`.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Từ khóa tìm kiếm
+          example: Nguyễn
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StakeholderListResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/stakeholders:
+    get:
+      tags: [Stakeholders]
+      summary: Lấy danh sách tất cả chủ thể
+      operationId: getAllStakeholders
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StakeholderListResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Stakeholders]
+      summary: Tạo chủ thể mới
+      operationId: createStakeholder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StakeholderBody'
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessWithId'
+        '400':
+          description: Tên chủ thể là bắt buộc
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/stakeholders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1714200000001
+    get:
+      tags: [Stakeholders]
+      summary: Xem chi tiết chủ thể
+      operationId: getStakeholderById
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StakeholderDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Stakeholders]
+      summary: Cập nhật chủ thể
+      operationId: updateStakeholder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StakeholderBody'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Stakeholders]
+      summary: Xóa chủ thể
+      operationId: deleteStakeholder
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ════════════════════════════════
+  # COPYRIGHTS
+  # ════════════════════════════════
+  /api/copyrights/search:
+    get:
+      tags: [Copyrights]
+      summary: Tìm kiếm bản quyền
+      operationId: searchCopyrights
+      description: |
+        Tìm kiếm theo từng trường. Truyền một hoặc nhiều tham số — nhiều tham số sẽ được kết hợp bằng **AND** (bản ghi phải thỏa mãn tất cả điều kiện).
+        Kết quả không bao gồm danh sách authors/owners — dùng GET /:id để lấy đầy đủ.
+
+        **Ví dụ:**
+        - Tìm 1 trường: `?title=phần mềm`
+        - Tìm nhiều trường: `?type=software&grantDate=2024`
+      parameters:
+        - name: certificateNumber
+          in: query
+          schema:
+            type: string
+          description: Số chứng nhận
+          example: BQ-2024-001
+        - name: title
+          in: query
+          schema:
+            type: string
+          description: Tên tác phẩm
+          example: phần mềm
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Loại bản quyền
+          example: software
+        - name: grantDate
+          in: query
+          schema:
+            type: string
+          description: Ngày cấp (tìm theo chuỗi, ví dụ năm hoặc ngày đầy đủ)
+          example: "2024"
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CopyrightRow'
+        '400':
+          description: Không truyền tham số tìm kiếm nào
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/copyrights/search-all:
+    get:
+      tags: [Copyrights]
+      summary: Tìm kiếm bản quyền tổng hợp (Admin/Staff)
+      operationId: searchAllCopyrights
+      security:
+        - bearerAuth: []
+      description: |
+        Tìm kiếm **OR** trên tất cả các trường: `certificateNumber`, `title`, `type`, `grantDate`.
+        Chỉ dành cho Admin và Staff. Kết quả không bao gồm authors/owners — dùng GET /:id để lấy đầy đủ.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Từ khóa tìm kiếm (khớp với bất kỳ trường nào)
+          example: phần mềm
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CopyrightRow'
+        '400':
+          description: Thiếu tham số q
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/copyrights:
+    get:
+      tags: [Copyrights]
+      summary: Lấy danh sách tất cả bản quyền
+      operationId: getAllCopyrights
+      description: Trả về danh sách thô, không có authors/owners lồng nhau. Dùng GET /:id để lấy đầy đủ.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CopyrightRow'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Copyrights]
+      summary: Tạo bản quyền mới
+      operationId: createCopyright
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                certificateNumber:
+                  type: string
+                  example: BQ-2024-001
+                grantDate:
+                  type: string
+                  format: date
+                  example: "2024-01-15"
+                title:
+                  type: string
+                  example: Phần mềm quản lý nhà hàng
+                type:
+                  type: string
+                  example: software
+                authors:
+                  type: string
+                  description: 'JSON array — [{"name":"...","address":"..."}]'
+                  example: '[{"name":"Nguyễn Văn A","address":"123 Lê Lợi, Hà Nội"}]'
+                owners:
+                  type: string
+                  description: 'JSON array — [{"name":"...","address":"..."}]'
+                  example: '[{"name":"Công ty TNHH ABC Tech","address":"789 Nguyễn Huệ, TP.HCM"}]'
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: File ảnh, tối đa 5 file
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessWithId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/copyrights/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1714200000000
+    get:
+      tags: [Copyrights]
+      summary: Xem chi tiết bản quyền
+      operationId: getCopyrightById
+      description: Trả về bản quyền kèm danh sách `authors` và `owners`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CopyrightDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Copyrights]
+      summary: Cập nhật bản quyền
+      operationId: updateCopyright
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                certificateNumber:
+                  type: string
+                grantDate:
+                  type: string
+                  format: date
+                title:
+                  type: string
+                type:
+                  type: string
+                authors:
+                  type: string
+                  description: JSON array string
+                owners:
+                  type: string
+                  description: JSON array string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Bỏ trống để giữ ảnh cũ
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Copyrights]
+      summary: Xóa bản quyền
+      operationId: deleteCopyright
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ════════════════════════════════
+  # CRAFT VILLAGES
+  # ════════════════════════════════
+  /api/craft-villages/search:
+    get:
+      tags: [Craft Villages]
+      summary: Tìm kiếm làng nghề
+      operationId: searchCraftVillages
+      description: |
+        Tìm kiếm theo từng trường. Truyền một hoặc nhiều tham số — nhiều tham số kết hợp **AND**.
+
+        **Ví dụ:**
+        - `?name=Bát Tràng`
+        - `?product=gốm&address=Hà Nội`
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Tên làng nghề
+          example: Bát Tràng
+        - name: product
+          in: query
+          schema:
+            type: string
+          description: Sản phẩm đặc trưng
+          example: gốm
+        - name: address
+          in: query
+          schema:
+            type: string
+          description: Địa chỉ
+          example: Hà Nội
+        - name: certificateNumber
+          in: query
+          schema:
+            type: string
+          description: Số chứng nhận
+          example: LN-HN-001
+        - name: recognitionDate
+          in: query
+          schema:
+            type: string
+          description: Ngày công nhận (tìm theo chuỗi)
+          example: "2010"
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CraftVillageDetail'
+        '400':
+          description: Không truyền tham số tìm kiếm nào
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/craft-villages/search-all:
+    get:
+      tags: [Craft Villages]
+      summary: Tìm kiếm làng nghề tổng hợp (Admin/Staff)
+      operationId: searchAllCraftVillages
+      security:
+        - bearerAuth: []
+      description: |
+        Tìm kiếm **OR** trên tất cả các trường: `name`, `product`, `address`, `certificateNumber`, `recognitionDate`.
+        Chỉ dành cho Admin và Staff.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Từ khóa tìm kiếm (khớp với bất kỳ trường nào)
+          example: Bát Tràng
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CraftVillageDetail'
+        '400':
+          description: Thiếu tham số q
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/craft-villages:
+    get:
+      tags: [Craft Villages]
+      summary: Lấy danh sách tất cả làng nghề
+      operationId: getAllCraftVillages
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CraftVillageDetail'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Craft Villages]
+      summary: Tạo làng nghề mới
+      operationId: createCraftVillage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Làng gốm Bát Tràng
+                product:
+                  type: string
+                  example: Đồ gốm sứ mỹ nghệ
+                address:
+                  type: string
+                  example: Xã Bát Tràng, Huyện Gia Lâm, Hà Nội
+                certificateNumber:
+                  type: string
+                  example: LN-HN-001
+                recognitionDate:
+                  type: string
+                  format: date
+                  example: "2010-05-20"
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessWithId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/craft-villages/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1714200000000
+    get:
+      tags: [Craft Villages]
+      summary: Xem chi tiết làng nghề
+      operationId: getCraftVillageById
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/CraftVillageDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Craft Villages]
+      summary: Cập nhật làng nghề
+      operationId: updateCraftVillage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                product:
+                  type: string
+                address:
+                  type: string
+                certificateNumber:
+                  type: string
+                recognitionDate:
+                  type: string
+                  format: date
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Bỏ trống để giữ ảnh cũ
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Craft Villages]
+      summary: Xóa làng nghề
+      operationId: deleteCraftVillage
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ════════════════════════════════
+  # TRADEMARKS
+  # ════════════════════════════════
+  /api/trademarks/search:
+    get:
+      tags: [Trademarks]
+      summary: Tìm kiếm nhãn hiệu
+      operationId: searchTrademarks
+      description: |
+        Tìm kiếm theo từng trường. Truyền một hoặc nhiều tham số — nhiều tham số kết hợp **AND**.
+        Kết quả chứa `ownerId` thay vì object `owner` — dùng GET /:id để lấy đầy đủ.
+
+        **Ví dụ:**
+        - `?name=Vinamilk`
+        - `?name=Vinamilk&status=Đã cấp văn bằng`
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Tên nhãn hiệu
+          example: Vinamilk
+        - name: trademarkSample
+          in: query
+          schema:
+            type: string
+          description: Mẫu nhãn hiệu
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Loại nhãn hiệu
+          example: Nhãn hiệu hàng hóa
+        - name: applicationNumber
+          in: query
+          schema:
+            type: string
+          description: Số đơn
+          example: 4-2024-10001
+        - name: publicationNumber
+          in: query
+          schema:
+            type: string
+          description: Số công bố
+        - name: certificateNumber
+          in: query
+          schema:
+            type: string
+          description: Số văn bằng
+          example: NH-2024-10001
+        - name: productServiceGroup
+          in: query
+          schema:
+            type: string
+          description: Nhóm sản phẩm/dịch vụ
+        - name: classification
+          in: query
+          schema:
+            type: string
+          description: Phân nhóm
+          example: Nhóm 29
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Trạng thái
+          example: Đã cấp văn bằng
+        - name: applicationDate
+          in: query
+          schema:
+            type: string
+          description: Ngày nộp đơn (tìm theo chuỗi)
+          example: "2024"
+        - name: publicationDate
+          in: query
+          schema:
+            type: string
+          description: Ngày công bố (tìm theo chuỗi)
+        - name: grantDate
+          in: query
+          schema:
+            type: string
+          description: Ngày cấp (tìm theo chuỗi)
+        - name: expirationDate
+          in: query
+          schema:
+            type: string
+          description: Ngày hết hạn (tìm theo chuỗi)
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TrademarkRow'
+        '400':
+          description: Không truyền tham số tìm kiếm nào
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/trademarks/search-all:
+    get:
+      tags: [Trademarks]
+      summary: Tìm kiếm nhãn hiệu tổng hợp (Admin/Staff)
+      operationId: searchAllTrademarks
+      security:
+        - bearerAuth: []
+      description: |
+        Tìm kiếm **OR** trên tất cả các trường: `name`, `trademarkSample`, `type`, `applicationNumber`,
+        `publicationNumber`, `certificateNumber`, `productServiceGroup`, `classification`, `status`,
+        `applicationDate`, `publicationDate`, `grantDate`, `expirationDate`.
+        Chỉ dành cho Admin và Staff. Kết quả chứa `ownerId` — dùng GET /:id để lấy đầy đủ.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Từ khóa tìm kiếm (khớp với bất kỳ trường nào)
+          example: Vinamilk
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TrademarkRow'
+        '400':
+          description: Thiếu tham số q
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/trademarks:
+    get:
+      tags: [Trademarks]
+      summary: Lấy danh sách tất cả nhãn hiệu
+      operationId: getAllTrademarks
+      description: Trả về danh sách thô, chứa `ownerId` thay vì object `owner`. Dùng GET /:id để lấy đầy đủ.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TrademarkRow'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Trademarks]
+      summary: Tạo nhãn hiệu mới
+      operationId: createTrademark
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: VINAMILK
+                type:
+                  type: string
+                  example: Nhãn hiệu hàng hóa
+                trademarkSample:
+                  type: string
+                  example: Logo chữ VINAMILK màu xanh dương
+                  description: Mô tả hoặc URL mẫu nhãn hiệu
+                applicationNumber:
+                  type: string
+                  example: 4-2024-10001
+                applicationDate:
+                  type: string
+                  format: date
+                  example: "2024-01-10"
+                publicationNumber:
+                  type: string
+                  example: PB-2024-10001
+                publicationDate:
+                  type: string
+                  format: date
+                certificateNumber:
+                  type: string
+                  example: NH-2024-10001
+                grantDate:
+                  type: string
+                  format: date
+                expirationDate:
+                  type: string
+                  format: date
+                  example: "2034-07-15"
+                productServiceGroup:
+                  type: string
+                  example: Nhóm 29 - Sữa và các sản phẩm từ sữa
+                classification:
+                  type: string
+                  example: Nhóm 29
+                status:
+                  type: string
+                  example: Đã cấp văn bằng
+                owner:
+                  type: string
+                  description: 'JSON object — {"name":"...","address":"..."}'
+                  example: '{"name":"Công ty Cổ phần Sữa Việt Nam","address":"10 Tân Trào, Q.7, TP.HCM"}'
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessWithId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/trademarks/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1714200000000
+    get:
+      tags: [Trademarks]
+      summary: Xem chi tiết nhãn hiệu
+      operationId: getTrademarkById
+      description: Trả về nhãn hiệu kèm thông tin `owner`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/TrademarkDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Trademarks]
+      summary: Cập nhật nhãn hiệu
+      operationId: updateTrademark
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                trademarkSample:
+                  type: string
+                applicationNumber:
+                  type: string
+                applicationDate:
+                  type: string
+                  format: date
+                publicationNumber:
+                  type: string
+                publicationDate:
+                  type: string
+                  format: date
+                certificateNumber:
+                  type: string
+                grantDate:
+                  type: string
+                  format: date
+                expirationDate:
+                  type: string
+                  format: date
+                productServiceGroup:
+                  type: string
+                classification:
+                  type: string
+                status:
+                  type: string
+                owner:
+                  type: string
+                  description: JSON object string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Bỏ trống để giữ ảnh cũ
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Trademarks]
+      summary: Xóa nhãn hiệu
+      operationId: deleteTrademark
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ════════════════════════════════
+  # GEOGRAPHICAL INDICATIONS
+  # ════════════════════════════════
+  /api/geographical-indications/search:
+    get:
+      tags: [Geographical Indications]
+      summary: Tìm kiếm chỉ dẫn địa lý
+      operationId: searchGeographicalIndications
+      description: |
+        Tìm kiếm theo từng trường. Truyền một hoặc nhiều tham số — nhiều tham số kết hợp **AND**.
+        Kết quả chứa `ownerId`/`managementOrgId` thay vì object lồng nhau — dùng GET /:id để lấy đầy đủ.
+
+        **Ví dụ:**
+        - `?name=Phú Quốc`
+        - `?product=nước mắm&status=Đã đăng ký`
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Tên chỉ dẫn địa lý
+          example: Phú Quốc
+        - name: product
+          in: query
+          schema:
+            type: string
+          description: Sản phẩm
+          example: nước mắm
+        - name: applicationNumber
+          in: query
+          schema:
+            type: string
+          description: Số đơn
+        - name: certificateNumber
+          in: query
+          schema:
+            type: string
+          description: Số chứng nhận
+        - name: geographicalArea
+          in: query
+          schema:
+            type: string
+          description: Khu vực địa lý
+          example: Kiên Giang
+        - name: description
+          in: query
+          schema:
+            type: string
+          description: Mô tả
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Trạng thái
+          example: Đã đăng ký
+        - name: applicationDate
+          in: query
+          schema:
+            type: string
+          description: Ngày nộp đơn (tìm theo chuỗi)
+        - name: grantDate
+          in: query
+          schema:
+            type: string
+          description: Ngày cấp (tìm theo chuỗi)
+          example: "2024"
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GeographicalIndicationRow'
+        '400':
+          description: Không truyền tham số tìm kiếm nào
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/geographical-indications/search-all:
+    get:
+      tags: [Geographical Indications]
+      summary: Tìm kiếm chỉ dẫn địa lý tổng hợp (Admin/Staff)
+      operationId: searchAllGeographicalIndications
+      security:
+        - bearerAuth: []
+      description: |
+        Tìm kiếm **OR** trên tất cả các trường: `name`, `product`, `applicationNumber`, `certificateNumber`,
+        `geographicalArea`, `description`, `status`, `applicationDate`, `grantDate`.
+        Chỉ dành cho Admin và Staff. Kết quả chứa `ownerId`/`managementOrgId` — dùng GET /:id để lấy đầy đủ.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Từ khóa tìm kiếm (khớp với bất kỳ trường nào)
+          example: Phú Quốc
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GeographicalIndicationRow'
+        '400':
+          description: Thiếu tham số q
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/geographical-indications:
+    get:
+      tags: [Geographical Indications]
+      summary: Lấy danh sách tất cả chỉ dẫn địa lý
+      operationId: getAllGeographicalIndications
+      description: Trả về danh sách thô, chứa `ownerId`/`managementOrgId`. Dùng GET /:id để lấy đầy đủ.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GeographicalIndicationRow'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Geographical Indications]
+      summary: Tạo chỉ dẫn địa lý mới
+      operationId: createGeographicalIndication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Nước mắm Phú Quốc
+                product:
+                  type: string
+                  example: Nước mắm
+                applicationNumber:
+                  type: string
+                  example: CDDL-2024-001
+                applicationDate:
+                  type: string
+                  format: date
+                certificateNumber:
+                  type: string
+                  example: CDDL-PQ-001
+                grantDate:
+                  type: string
+                  format: date
+                geographicalArea:
+                  type: string
+                  example: Đảo Phú Quốc, tỉnh Kiên Giang
+                description:
+                  type: string
+                  example: Nước mắm truyền thống sản xuất tại đảo Phú Quốc
+                status:
+                  type: string
+                  example: Đã đăng ký
+                owner:
+                  type: string
+                  description: 'JSON object — {"name":"...","address":"..."}'
+                  example: '{"name":"UBND tỉnh Kiên Giang","address":"Đường Hùng Vương, TP. Rạch Giá"}'
+                managementOrg:
+                  type: string
+                  description: 'JSON object — Tổ chức quản lý chỉ dẫn'
+                  example: '{"name":"Hội sản xuất nước mắm Phú Quốc","address":"Đường 30/4, Dương Đông, Phú Quốc"}'
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessWithId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/geographical-indications/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1714200000000
+    get:
+      tags: [Geographical Indications]
+      summary: Xem chi tiết chỉ dẫn địa lý
+      operationId: getGeographicalIndicationById
+      description: Trả về chỉ dẫn địa lý kèm `owner` và `managementOrg`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/GeographicalIndicationDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Geographical Indications]
+      summary: Cập nhật chỉ dẫn địa lý
+      operationId: updateGeographicalIndication
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                product:
+                  type: string
+                applicationNumber:
+                  type: string
+                applicationDate:
+                  type: string
+                  format: date
+                certificateNumber:
+                  type: string
+                grantDate:
+                  type: string
+                  format: date
+                geographicalArea:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                owner:
+                  type: string
+                  description: JSON object string
+                managementOrg:
+                  type: string
+                  description: JSON object string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Bỏ trống để giữ ảnh cũ
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Geographical Indications]
+      summary: Xóa chỉ dẫn địa lý
+      operationId: deleteGeographicalIndication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ════════════════════════════════
+  # INVENTIONS
+  # ════════════════════════════════
+  /api/inventions/search:
+    get:
+      tags: [Inventions]
+      summary: Tìm kiếm sáng chế
+      operationId: searchInventions
+      description: |
+        Tìm kiếm theo từng trường. Truyền một hoặc nhiều tham số — nhiều tham số kết hợp **AND**.
+        Kết quả chứa `ownerId` thay vì object `owner`, không có mảng `authors` — dùng GET /:id để lấy đầy đủ.
+
+        **Ví dụ:**
+        - `?name=năng lượng`
+        - `?ipcClassification=H02S&status=Đã cấp`
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Tên sáng chế
+          example: năng lượng mặt trời
+        - name: applicationNumber
+          in: query
+          schema:
+            type: string
+          description: Số đơn
+        - name: publicationNumber
+          in: query
+          schema:
+            type: string
+          description: Số công bố
+        - name: certificateNumber
+          in: query
+          schema:
+            type: string
+          description: Số bằng độc quyền
+        - name: ipcClassification
+          in: query
+          schema:
+            type: string
+          description: Phân loại IPC
+          example: H02S 40/00
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Trạng thái
+          example: Đã cấp bằng độc quyền sáng chế
+        - name: applicationDate
+          in: query
+          schema:
+            type: string
+          description: Ngày nộp đơn (tìm theo chuỗi)
+        - name: publicationDate
+          in: query
+          schema:
+            type: string
+          description: Ngày công bố (tìm theo chuỗi)
+        - name: grantDate
+          in: query
+          schema:
+            type: string
+          description: Ngày cấp (tìm theo chuỗi)
+          example: "2024"
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventionRow'
+        '400':
+          description: Không truyền tham số tìm kiếm nào
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/inventions/search-all:
+    get:
+      tags: [Inventions]
+      summary: Tìm kiếm sáng chế tổng hợp (Admin/Staff)
+      operationId: searchAllInventions
+      security:
+        - bearerAuth: []
+      description: |
+        Tìm kiếm **OR** trên tất cả các trường: `name`, `applicationNumber`, `publicationNumber`,
+        `certificateNumber`, `ipcClassification`, `status`, `applicationDate`, `publicationDate`, `grantDate`.
+        Chỉ dành cho Admin và Staff. Kết quả chứa `ownerId`, không có `authors` — dùng GET /:id để lấy đầy đủ.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Từ khóa tìm kiếm (khớp với bất kỳ trường nào)
+          example: năng lượng
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventionRow'
+        '400':
+          description: Thiếu tham số q
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/inventions:
+    get:
+      tags: [Inventions]
+      summary: Lấy danh sách tất cả sáng chế
+      operationId: getAllInventions
+      description: Trả về danh sách thô, chứa `ownerId`, không có `authors`. Dùng GET /:id để lấy đầy đủ.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventionRow'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Inventions]
+      summary: Tạo sáng chế mới
+      operationId: createInvention
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Hệ thống thu hồi năng lượng mặt trời hiệu suất cao
+                applicationNumber:
+                  type: string
+                  example: 1-2024-05001
+                applicationDate:
+                  type: string
+                  format: date
+                publicationNumber:
+                  type: string
+                  example: PB-SC-2024-05001
+                publicationDate:
+                  type: string
+                  format: date
+                certificateNumber:
+                  type: string
+                  example: SC-2024-05001
+                grantDate:
+                  type: string
+                  format: date
+                ipcClassification:
+                  type: string
+                  example: H02S 40/00
+                  description: Phân loại sáng chế quốc tế (IPC)
+                status:
+                  type: string
+                  example: Đã cấp bằng độc quyền sáng chế
+                owner:
+                  type: string
+                  description: 'JSON object — {"name":"...","address":"..."}'
+                  example: '{"name":"Trường ĐH Bách Khoa Hà Nội","address":"01 Đại Cồ Việt, Hà Nội"}'
+                authors:
+                  type: string
+                  description: 'JSON array — [{"name":"...","address":"..."}]'
+                  example: '[{"name":"PGS.TS Nguyễn Văn Hùng","address":"Hà Nội"}]'
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessWithId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/inventions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1714200000000
+    get:
+      tags: [Inventions]
+      summary: Xem chi tiết sáng chế
+      operationId: getInventionById
+      description: Trả về sáng chế kèm `owner` và mảng `authors`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/InventionDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Inventions]
+      summary: Cập nhật sáng chế
+      operationId: updateInvention
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                applicationNumber:
+                  type: string
+                applicationDate:
+                  type: string
+                  format: date
+                publicationNumber:
+                  type: string
+                publicationDate:
+                  type: string
+                  format: date
+                certificateNumber:
+                  type: string
+                grantDate:
+                  type: string
+                  format: date
+                ipcClassification:
+                  type: string
+                status:
+                  type: string
+                owner:
+                  type: string
+                  description: JSON object string
+                authors:
+                  type: string
+                  description: JSON array string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Bỏ trống để giữ ảnh cũ
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Inventions]
+      summary: Xóa sáng chế
+      operationId: deleteInvention
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ════════════════════════════════
+  # INDUSTRIAL DESIGNS
+  # ════════════════════════════════
+  /api/industrial-designs/search:
+    get:
+      tags: [Industrial Designs]
+      summary: Tìm kiếm kiểu dáng công nghiệp
+      operationId: searchIndustrialDesigns
+      description: |
+        Tìm kiếm theo từng trường. Truyền một hoặc nhiều tham số — nhiều tham số kết hợp **AND**.
+        Kết quả chứa `ownerId` thay vì object `owner`, không có mảng `authors` — dùng GET /:id để lấy đầy đủ.
+
+        **Ví dụ:**
+        - `?name=chai`
+        - `?locarnoClassification=09-01&status=Đã cấp`
+      parameters:
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Tên kiểu dáng
+          example: chai nước giải khát
+        - name: applicationNumber
+          in: query
+          schema:
+            type: string
+          description: Số đơn
+        - name: publicationNumber
+          in: query
+          schema:
+            type: string
+          description: Số công bố
+        - name: certificateNumber
+          in: query
+          schema:
+            type: string
+          description: Số bằng độc quyền
+        - name: locarnoClassification
+          in: query
+          schema:
+            type: string
+          description: Phân loại Locarno
+          example: 09-01
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: Trạng thái
+          example: Đã cấp bằng độc quyền kiểu dáng
+        - name: applicationDate
+          in: query
+          schema:
+            type: string
+          description: Ngày nộp đơn (tìm theo chuỗi)
+        - name: publicationDate
+          in: query
+          schema:
+            type: string
+          description: Ngày công bố (tìm theo chuỗi)
+        - name: grantDate
+          in: query
+          schema:
+            type: string
+          description: Ngày cấp (tìm theo chuỗi)
+        - name: expirationDate
+          in: query
+          schema:
+            type: string
+          description: Ngày hết hạn (tìm theo chuỗi)
+          example: "2029"
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IndustrialDesignRow'
+        '400':
+          description: Không truyền tham số tìm kiếm nào
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/industrial-designs/search-all:
+    get:
+      tags: [Industrial Designs]
+      summary: Tìm kiếm kiểu dáng công nghiệp tổng hợp (Admin/Staff)
+      operationId: searchAllIndustrialDesigns
+      security:
+        - bearerAuth: []
+      description: |
+        Tìm kiếm **OR** trên tất cả các trường: `name`, `applicationNumber`, `publicationNumber`,
+        `certificateNumber`, `locarnoClassification`, `status`, `applicationDate`, `publicationDate`,
+        `grantDate`, `expirationDate`.
+        Chỉ dành cho Admin và Staff. Kết quả chứa `ownerId`, không có `authors` — dùng GET /:id để lấy đầy đủ.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Từ khóa tìm kiếm (khớp với bất kỳ trường nào)
+          example: chai
+      responses:
+        '200':
+          description: Kết quả tìm kiếm
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IndustrialDesignRow'
+        '400':
+          description: Thiếu tham số q
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/industrial-designs:
+    get:
+      tags: [Industrial Designs]
+      summary: Lấy danh sách tất cả kiểu dáng công nghiệp
+      operationId: getAllIndustrialDesigns
+      description: Trả về danh sách thô, chứa `ownerId`, không có `authors`. Dùng GET /:id để lấy đầy đủ.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IndustrialDesignRow'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags: [Industrial Designs]
+      summary: Tạo kiểu dáng công nghiệp mới
+      operationId: createIndustrialDesign
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Kiểu dáng chai nước giải khát hình sóng biển
+                applicationNumber:
+                  type: string
+                  example: 2-2024-20001
+                applicationDate:
+                  type: string
+                  format: date
+                publicationNumber:
+                  type: string
+                  example: PB-KD-2024-20001
+                publicationDate:
+                  type: string
+                  format: date
+                certificateNumber:
+                  type: string
+                  example: KD-2024-20001
+                grantDate:
+                  type: string
+                  format: date
+                expirationDate:
+                  type: string
+                  format: date
+                  example: "2029-08-20"
+                locarnoClassification:
+                  type: string
+                  example: 09-01
+                  description: Phân loại Locarno về kiểu dáng công nghiệp
+                status:
+                  type: string
+                  example: Đã cấp bằng độc quyền kiểu dáng
+                owner:
+                  type: string
+                  description: 'JSON object — {"name":"...","address":"..."}'
+                  example: '{"name":"Công ty Cổ phần Tân Hiệp Phát","address":"219 Bình Dương"}'
+                authors:
+                  type: string
+                  description: 'JSON array — [{"name":"...","address":"..."}]'
+                  example: '[{"name":"Nguyễn Thị Hoa","address":"Bình Dương"}]'
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessWithId'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/industrial-designs/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1714200000000
+    get:
+      tags: [Industrial Designs]
+      summary: Xem chi tiết kiểu dáng công nghiệp
+      operationId: getIndustrialDesignById
+      description: Trả về kiểu dáng kèm `owner` và mảng `authors`.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/IndustrialDesignDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      tags: [Industrial Designs]
+      summary: Cập nhật kiểu dáng công nghiệp
+      operationId: updateIndustrialDesign
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                applicationNumber:
+                  type: string
+                applicationDate:
+                  type: string
+                  format: date
+                publicationNumber:
+                  type: string
+                publicationDate:
+                  type: string
+                  format: date
+                certificateNumber:
+                  type: string
+                grantDate:
+                  type: string
+                  format: date
+                expirationDate:
+                  type: string
+                  format: date
+                locarnoClassification:
+                  type: string
+                status:
+                  type: string
+                owner:
+                  type: string
+                  description: JSON object string
+                authors:
+                  type: string
+                  description: JSON array string
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Bỏ trống để giữ ảnh cũ
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      tags: [Industrial Designs]
+      summary: Xóa kiểu dáng công nghiệp
+      operationId: deleteIndustrialDesign
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessMessage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'

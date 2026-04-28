@@ -123,6 +123,26 @@ export class UserController {
     }
     }
 
+    static async getUserAll(_req: Request, res: Response): Promise<void> {
+    try {
+        const [users]: any = await pool.query(
+        'SELECT id, username, fullName, role FROM users ORDER BY id DESC'
+        );
+
+        if (users.length === 0) {
+        res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản' });
+        return;
+        }
+
+        res.status(200).json({
+        success: true,
+        data: users
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+    }
+    }
+
     // [DELETE] /api/users/:id - Xóa tài khoản
     static async deleteUser(req: Request, res: Response): Promise<void> {
     try {

@@ -1,41 +1,23 @@
 {
   "info": {
-    "_postman_id": "express-api-full-collection",
-    "name": "Express API - Full Collection",
-    "description": "Collection đầy đủ để test tất cả API: Auth, Users (Admin), Copyrights (Admin/Staff)",
+    "_postman_id": "shtt-api-full-collection",
+    "name": "SHTT API - Full Collection",
+    "description": "Collection day du tat ca API: Auth, Users, Copyrights, Stakeholders, Craft Villages, Trademarks, Geographical Indications, Inventions, Industrial Designs",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:3000",
-      "type": "string"
-    },
-    {
-      "key": "accessToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "refreshToken",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "userId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "createdUserId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "copyrightId",
-      "value": "",
-      "type": "string"
-    }
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "userId", "value": "", "type": "string" },
+    { "key": "createdUserId", "value": "", "type": "string" },
+    { "key": "copyrightId", "value": "", "type": "string" },
+    { "key": "stakeholderId", "value": "", "type": "string" },
+    { "key": "craftVillageId", "value": "", "type": "string" },
+    { "key": "trademarkId", "value": "", "type": "string" },
+    { "key": "geographicalIndicationId", "value": "", "type": "string" },
+    { "key": "inventionId", "value": "", "type": "string" },
+    { "key": "industrialDesignId", "value": "", "type": "string" }
   ],
   "item": [
     {
@@ -46,11 +28,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/",
-              "host": ["{{baseUrl}}"],
-              "path": [""]
-            }
+            "url": { "raw": "{{baseUrl}}/", "host": ["{{baseUrl}}"], "path": [""] }
           },
           "response": []
         },
@@ -59,11 +37,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "health"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] }
           },
           "response": []
         }
@@ -73,22 +47,18 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Login",
+          "name": "Login (luu token tu dong)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
                   "if (pm.response.code === 200) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
-                  "    pm.environment.set('refreshToken', jsonData.data.refreshToken);",
-                  "    pm.environment.set('userId', jsonData.data.user.id);",
-                  "    console.log('Login thanh cong!');",
-                  "    console.log('Access Token:', jsonData.data.accessToken);",
-                  "} else {",
-                  "    console.log('Login that bai!');",
-                  "    console.log('Response:', pm.response.json());",
+                  "    var d = pm.response.json().data;",
+                  "    pm.environment.set('accessToken', d.accessToken);",
+                  "    pm.environment.set('refreshToken', d.refreshToken);",
+                  "    pm.environment.set('userId', d.user.id);",
+                  "    console.log('Login OK - accessToken da luu');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -97,45 +67,27 @@
           ],
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Test@123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
           },
           "response": []
         },
         {
-          "name": "Refresh Token",
+          "name": "Refresh Token (luu token moi)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
                   "if (pm.response.code === 200) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
-                  "    console.log('Refresh Token thanh cong!');",
-                  "    console.log('New Access Token:', jsonData.data.accessToken);",
-                  "} else {",
-                  "    console.log('Refresh Token that bai!');",
-                  "    console.log('Response:', pm.response.json());",
+                  "    var d = pm.response.json().data;",
+                  "    pm.environment.set('accessToken', d.accessToken);",
+                  "    console.log('Refresh OK - accessToken moi da luu');",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -144,134 +96,73 @@
           ],
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/refresh-token",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "refresh-token"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["api", "auth", "refresh-token"] }
           },
           "response": []
         },
         {
-          "name": "Login - Sai username",
+          "name": "[401] Login - Sai username",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"khong_ton_tai\",\n  \"password\": \"Test@123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
           },
           "response": []
         },
         {
-          "name": "Login - Sai password",
+          "name": "[401] Login - Sai password",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"SaiMatKhau\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "login"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
           },
           "response": []
         },
         {
-          "name": "Refresh Token - Token het han",
+          "name": "[401] Refresh Token - Token khong hop le",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"token_het_han_hoac_khong_hop_le\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"refreshToken\": \"token_het_han_hoac_gia_mao\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/refresh-token",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "refresh-token"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh-token", "host": ["{{baseUrl}}"], "path": ["api", "auth", "refresh-token"] }
           },
           "response": []
         }
       ]
     },
     {
-      "name": "User Management (Admin only)",
+      "name": "Users (Admin only)",
       "item": [
         {
-          "name": "Create User",
+          "name": "Create User (luu createdUserId)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
                   "if (pm.response.code === 201) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('createdUserId', jsonData.data.id);",
-                  "    console.log('Tao user thanh cong!');",
-                  "    console.log('User ID:', jsonData.data.id);",
-                  "} else {",
-                  "    console.log('Tao user that bai!');",
-                  "    console.log('Response:', pm.response.json());",
+                  "    pm.environment.set('createdUserId', pm.response.json().data.id);",
+                  "    console.log('Tao user OK, ID:', pm.response.json().data.id);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -281,31 +172,15 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"staff_user\",\n  \"fullName\": \"Nguyen Van A\",\n  \"password\": \"SecurePass@2024\",\n  \"role\": \"staff\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"username\": \"staff_test\",\n  \"fullName\": \"Nguyen Van A\",\n  \"password\": \"SecurePass@2024\",\n  \"role\": \"staff\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
           },
           "response": []
         },
@@ -313,70 +188,25 @@
           "name": "Get User by ID",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/{{createdUserId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "{{createdUserId}}"]
-            }
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/users/{{createdUserId}}", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{createdUserId}}"] }
           },
           "response": []
         },
         {
           "name": "Update User",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    var jsonData = pm.response.json();",
-                  "    console.log('Cap nhat user thanh cong!');",
-                  "    console.log('Full Name:', jsonData.data.fullName);",
-                  "    console.log('Role:', jsonData.data.role);",
-                  "} else {",
-                  "    console.log('Cap nhat user that bai!');",
-                  "    console.log('Response:', pm.response.json());",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Nguyen Van A - Da cap nhat\",\n  \"role\": \"staff\",\n  \"password\": \"NewSecurePass@2024\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"fullName\": \"Nguyen Van A - Da cap nhat\",\n  \"role\": \"staff\",\n  \"password\": \"NewPass@2024\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/users/{{createdUserId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "{{createdUserId}}"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/users/{{createdUserId}}", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{createdUserId}}"] }
           },
           "response": []
         },
@@ -384,301 +214,206 @@
           "name": "Delete User",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/{{createdUserId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "{{createdUserId}}"]
-            }
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/users/{{createdUserId}}", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{createdUserId}}"] }
           },
           "response": []
         },
         {
-          "name": "Create User - Username trung lap",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"admin\",\n  \"fullName\": \"Duplicate Admin\",\n  \"password\": \"Password@2024\",\n  \"role\": \"admin\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create User - Thieu thong tin",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"username\": \"incomplete_user\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get User - Khong tim thay (404)",
+          "name": "[404] Get User - Khong ton tai",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/9999999999",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "9999999999"]
-            }
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/users/9999999999", "host": ["{{baseUrl}}"], "path": ["api", "users", "9999999999"] }
           },
           "response": []
         },
         {
-          "name": "Create User - Khong co token (401)",
+          "name": "[401] Create User - Khong co token",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json", "type": "text" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"no_token_user\",\n  \"fullName\": \"No Token User\",\n  \"password\": \"Password@2024\",\n  \"role\": \"staff\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"username\": \"no_auth_user\",\n  \"fullName\": \"Test\",\n  \"password\": \"Pass@2024\",\n  \"role\": \"staff\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] }
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Copyright Management (Admin/Staff)",
+      "name": "Stakeholders",
       "item": [
+        {
+          "name": "Get All Stakeholders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/stakeholders", "host": ["{{baseUrl}}"], "path": ["api", "stakeholders"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Stakeholders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stakeholders/search?q=Nguyen",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stakeholders", "search"],
+              "query": [{ "key": "q", "value": "Nguyen" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Stakeholder (luu stakeholderId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('stakeholderId', pm.response.json().id);",
+                  "    console.log('Tao stakeholder OK, ID:', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cong ty TNHH Sang tao Viet\",\n  \"address\": \"123 Nguyen Hue, Quan 1, TP.HCM\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/stakeholders", "host": ["{{baseUrl}}"], "path": ["api", "stakeholders"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stakeholder by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/stakeholders/{{stakeholderId}}", "host": ["{{baseUrl}}"], "path": ["api", "stakeholders", "{{stakeholderId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Stakeholder",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cong ty TNHH Sang tao Viet - Da cap nhat\",\n  \"address\": \"456 Le Loi, Quan 3, TP.HCM\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/stakeholders/{{stakeholderId}}", "host": ["{{baseUrl}}"], "path": ["api", "stakeholders", "{{stakeholderId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Stakeholder",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/stakeholders/{{stakeholderId}}", "host": ["{{baseUrl}}"], "path": ["api", "stakeholders", "{{stakeholderId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "[404] Get Stakeholder - Khong ton tai",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/stakeholders/9999999999", "host": ["{{baseUrl}}"], "path": ["api", "stakeholders", "9999999999"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Copyrights",
+      "item": [
+        {
+          "name": "Get All Copyrights",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/copyrights", "host": ["{{baseUrl}}"], "path": ["api", "copyrights"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Copyrights",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/copyrights/search?q=phan mem",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "copyrights", "search"],
+              "query": [{ "key": "q", "value": "phan mem" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Copyright (luu copyrightId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('copyrightId', pm.response.json().id);",
+                  "    console.log('Tao copyright OK, ID:', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "certificateNumber", "value": "BQ-2024-001", "type": "text" },
+                { "key": "grantDate", "value": "2024-01-15", "type": "text" },
+                { "key": "title", "value": "Phan mem quan ly nha hang", "type": "text" },
+                { "key": "type", "value": "software", "type": "text" },
+                { "key": "authors", "value": "[{\"name\":\"Nguyen Van A\",\"address\":\"123 Le Loi, Ha Noi\"},{\"name\":\"Tran Thi B\",\"address\":\"456 Tran Hung Dao, Ha Noi\"}]", "type": "text" },
+                { "key": "owners", "value": "[{\"name\":\"Cong ty TNHH ABC Tech\",\"address\":\"789 Nguyen Hue, TP.HCM\"}]", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Chon anh (toi da 5)" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/copyrights", "host": ["{{baseUrl}}"], "path": ["api", "copyrights"] }
+          },
+          "response": []
+        },
         {
           "name": "Get Copyright by ID",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/copyrights/{{copyrightId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "copyrights", "{{copyrightId}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Copyright (co anh)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('copyrightId', jsonData.id);",
-                  "    console.log('Tao ban quyen thanh cong!');",
-                  "    console.log('Copyright ID:', jsonData.id);",
-                  "} else {",
-                  "    console.log('Tao ban quyen that bai!');",
-                  "    console.log('Response:', pm.response.json());",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "certificateNumber",
-                  "value": "BQ-2024-001",
-                  "type": "text"
-                },
-                {
-                  "key": "grantDate",
-                  "value": "2024-01-15",
-                  "type": "text"
-                },
-                {
-                  "key": "title",
-                  "value": "Phan mem quan ly van ban",
-                  "type": "text"
-                },
-                {
-                  "key": "type",
-                  "value": "software",
-                  "type": "text"
-                },
-                {
-                  "key": "authors",
-                  "value": "[{\"name\": \"Nguyen Van A\", \"address\": \"123 Le Loi, Ha Noi\"}, {\"name\": \"Tran Thi B\", \"address\": \"456 Tran Hung Dao, Ha Noi\"}]",
-                  "type": "text"
-                },
-                {
-                  "key": "owners",
-                  "value": "[{\"name\": \"Cong ty TNHH ABC\", \"address\": \"789 Nguyen Hue, TP.HCM\"}]",
-                  "type": "text"
-                },
-                {
-                  "key": "images",
-                  "type": "file",
-                  "src": [],
-                  "description": "Chon file anh (toi da 5 anh)"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/copyrights",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "copyrights"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Copyright (khong anh)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.environment.set('copyrightId', jsonData.id);",
-                  "    console.log('Tao ban quyen thanh cong!');",
-                  "    console.log('Copyright ID:', jsonData.id);",
-                  "} else {",
-                  "    console.log('Tao ban quyen that bai!');",
-                  "    console.log('Response:', pm.response.json());",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "certificateNumber",
-                  "value": "BQ-2024-002",
-                  "type": "text"
-                },
-                {
-                  "key": "grantDate",
-                  "value": "2024-03-20",
-                  "type": "text"
-                },
-                {
-                  "key": "title",
-                  "value": "Sach giao khoa toan hoc",
-                  "type": "text"
-                },
-                {
-                  "key": "type",
-                  "value": "book",
-                  "type": "text"
-                },
-                {
-                  "key": "authors",
-                  "value": "[{\"name\": \"Le Van C\", \"address\": \"101 Dinh Tien Hoang, Ha Noi\"}]",
-                  "type": "text"
-                },
-                {
-                  "key": "owners",
-                  "value": "[{\"name\": \"NXB Giao duc Viet Nam\", \"address\": \"81 Tran Hung Dao, Ha Noi\"}]",
-                  "type": "text"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/copyrights",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "copyrights"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/copyrights/{{copyrightId}}", "host": ["{{baseUrl}}"], "path": ["api", "copyrights", "{{copyrightId}}"] }
           },
           "response": []
         },
@@ -686,59 +421,20 @@
           "name": "Update Copyright",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
             "body": {
               "mode": "formdata",
               "formdata": [
-                {
-                  "key": "certificateNumber",
-                  "value": "BQ-2024-001-V2",
-                  "type": "text"
-                },
-                {
-                  "key": "grantDate",
-                  "value": "2024-06-01",
-                  "type": "text"
-                },
-                {
-                  "key": "title",
-                  "value": "Phan mem quan ly van ban - Ban cap nhat",
-                  "type": "text"
-                },
-                {
-                  "key": "type",
-                  "value": "software",
-                  "type": "text"
-                },
-                {
-                  "key": "authors",
-                  "value": "[{\"name\": \"Nguyen Van A\", \"address\": \"123 Le Loi, Ha Noi\"}, {\"name\": \"Pham Thi D\", \"address\": \"222 Ba Trieu, Ha Noi\"}]",
-                  "type": "text"
-                },
-                {
-                  "key": "owners",
-                  "value": "[{\"name\": \"Cong ty TNHH ABC\", \"address\": \"789 Nguyen Hue, TP.HCM\"}]",
-                  "type": "text"
-                },
-                {
-                  "key": "images",
-                  "type": "file",
-                  "src": [],
-                  "description": "Neu khong chon anh moi, anh cu se duoc giu lai"
-                }
+                { "key": "certificateNumber", "value": "BQ-2024-001-V2", "type": "text" },
+                { "key": "grantDate", "value": "2024-06-01", "type": "text" },
+                { "key": "title", "value": "Phan mem quan ly nha hang - Ban nang cap", "type": "text" },
+                { "key": "type", "value": "software", "type": "text" },
+                { "key": "authors", "value": "[{\"name\":\"Nguyen Van A\",\"address\":\"123 Le Loi, Ha Noi\"},{\"name\":\"Pham Thi D\",\"address\":\"222 Ba Trieu, Ha Noi\"}]", "type": "text" },
+                { "key": "owners", "value": "[{\"name\":\"Cong ty TNHH ABC Tech\",\"address\":\"789 Nguyen Hue, TP.HCM\"}]", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Bo trong de giu anh cu" }
               ]
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/copyrights/{{copyrightId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "copyrights", "{{copyrightId}}"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/copyrights/{{copyrightId}}", "host": ["{{baseUrl}}"], "path": ["api", "copyrights", "{{copyrightId}}"] }
           },
           "response": []
         },
@@ -746,79 +442,636 @@
           "name": "Delete Copyright",
           "request": {
             "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{accessToken}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/copyrights/{{copyrightId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "copyrights", "{{copyrightId}}"]
-            }
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/copyrights/{{copyrightId}}", "host": ["{{baseUrl}}"], "path": ["api", "copyrights", "{{copyrightId}}"] }
           },
           "response": []
         },
         {
-          "name": "Get Copyright - Khong tim thay (404)",
+          "name": "[404] Get Copyright - Khong ton tai",
           "request": {
             "method": "GET",
             "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/copyrights/9999999999",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "copyrights", "9999999999"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/copyrights/9999999999", "host": ["{{baseUrl}}"], "path": ["api", "copyrights", "9999999999"] }
           },
           "response": []
         },
         {
-          "name": "Create Copyright - Khong co token (403)",
+          "name": "[401] Create Copyright - Khong co token",
           "request": {
             "method": "POST",
             "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
-                {
-                  "key": "certificateNumber",
-                  "value": "BQ-2024-NO-AUTH",
-                  "type": "text"
-                },
-                {
-                  "key": "grantDate",
-                  "value": "2024-01-01",
-                  "type": "text"
-                },
-                {
-                  "key": "title",
-                  "value": "Test khong co token",
-                  "type": "text"
-                },
-                {
-                  "key": "type",
-                  "value": "test",
-                  "type": "text"
-                },
-                {
-                  "key": "authors",
-                  "value": "[]",
-                  "type": "text"
-                },
-                {
-                  "key": "owners",
-                  "value": "[]",
-                  "type": "text"
-                }
+                { "key": "certificateNumber", "value": "BQ-NO-AUTH", "type": "text" },
+                { "key": "title", "value": "Test khong auth", "type": "text" },
+                { "key": "authors", "value": "[]", "type": "text" },
+                { "key": "owners", "value": "[]", "type": "text" }
               ]
             },
+            "url": { "raw": "{{baseUrl}}/api/copyrights", "host": ["{{baseUrl}}"], "path": ["api", "copyrights"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Craft Villages",
+      "item": [
+        {
+          "name": "Get All Craft Villages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/craft-villages", "host": ["{{baseUrl}}"], "path": ["api", "craft-villages"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Craft Villages",
+          "request": {
+            "method": "GET",
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/copyrights",
+              "raw": "{{baseUrl}}/api/craft-villages/search?q=gom",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "copyrights"]
+              "path": ["api", "craft-villages", "search"],
+              "query": [{ "key": "q", "value": "gom" }]
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Craft Village (luu craftVillageId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('craftVillageId', pm.response.json().id);",
+                  "    console.log('Tao lang nghe OK, ID:', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Lang gom Bat Trang", "type": "text" },
+                { "key": "product", "value": "Do gom su my nghe", "type": "text" },
+                { "key": "address", "value": "Xa Bat Trang, Huyen Gia Lam, TP. Ha Noi", "type": "text" },
+                { "key": "certificateNumber", "value": "LN-HN-001", "type": "text" },
+                { "key": "recognitionDate", "value": "2010-05-20", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Chon anh (toi da 5)" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/craft-villages", "host": ["{{baseUrl}}"], "path": ["api", "craft-villages"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Craft Village by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/craft-villages/{{craftVillageId}}", "host": ["{{baseUrl}}"], "path": ["api", "craft-villages", "{{craftVillageId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Craft Village",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Lang gom Bat Trang - Nang cap", "type": "text" },
+                { "key": "product", "value": "Do gom su my nghe cao cap", "type": "text" },
+                { "key": "address", "value": "Xa Bat Trang, Huyen Gia Lam, TP. Ha Noi", "type": "text" },
+                { "key": "certificateNumber", "value": "LN-HN-001-V2", "type": "text" },
+                { "key": "recognitionDate", "value": "2015-03-10", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Bo trong de giu anh cu" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/craft-villages/{{craftVillageId}}", "host": ["{{baseUrl}}"], "path": ["api", "craft-villages", "{{craftVillageId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Craft Village",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/craft-villages/{{craftVillageId}}", "host": ["{{baseUrl}}"], "path": ["api", "craft-villages", "{{craftVillageId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "[404] Get Craft Village - Khong ton tai",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/craft-villages/9999999999", "host": ["{{baseUrl}}"], "path": ["api", "craft-villages", "9999999999"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Trademarks",
+      "item": [
+        {
+          "name": "Get All Trademarks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/trademarks", "host": ["{{baseUrl}}"], "path": ["api", "trademarks"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Trademarks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/trademarks/search?q=Viet",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trademarks", "search"],
+              "query": [{ "key": "q", "value": "Viet" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Trademark (luu trademarkId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('trademarkId', pm.response.json().id);",
+                  "    console.log('Tao nhan hieu OK, ID:', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "VINAMILK", "type": "text" },
+                { "key": "type", "value": "nhan hieu hang hoa", "type": "text" },
+                { "key": "trademarkSample", "value": "Logo chu VINAMILK mau xanh duong", "type": "text" },
+                { "key": "applicationNumber", "value": "4-2024-10001", "type": "text" },
+                { "key": "applicationDate", "value": "2024-01-10", "type": "text" },
+                { "key": "publicationNumber", "value": "PB-2024-10001", "type": "text" },
+                { "key": "publicationDate", "value": "2024-04-10", "type": "text" },
+                { "key": "certificateNumber", "value": "NH-2024-10001", "type": "text" },
+                { "key": "grantDate", "value": "2024-07-15", "type": "text" },
+                { "key": "expirationDate", "value": "2034-07-15", "type": "text" },
+                { "key": "productServiceGroup", "value": "Nhom 29 - Sua va cac san pham tu sua", "type": "text" },
+                { "key": "classification", "value": "Nhom 29", "type": "text" },
+                { "key": "status", "value": "Da cap van bang", "type": "text" },
+                { "key": "owner", "value": "{\"name\":\"Cong ty Co phan Sua Viet Nam (Vinamilk)\",\"address\":\"10 Tan Trao, P. Tan Phu, Q. 7, TP.HCM\"}", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Chon anh nhan hieu (toi da 5)" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/trademarks", "host": ["{{baseUrl}}"], "path": ["api", "trademarks"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Trademark by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/trademarks/{{trademarkId}}", "host": ["{{baseUrl}}"], "path": ["api", "trademarks", "{{trademarkId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Trademark",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "VINAMILK GOLD", "type": "text" },
+                { "key": "type", "value": "nhan hieu hang hoa", "type": "text" },
+                { "key": "trademarkSample", "value": "Logo VINAMILK GOLD mau vang", "type": "text" },
+                { "key": "applicationNumber", "value": "4-2024-10001", "type": "text" },
+                { "key": "applicationDate", "value": "2024-01-10", "type": "text" },
+                { "key": "publicationNumber", "value": "PB-2024-10001", "type": "text" },
+                { "key": "publicationDate", "value": "2024-04-10", "type": "text" },
+                { "key": "certificateNumber", "value": "NH-2024-10001-V2", "type": "text" },
+                { "key": "grantDate", "value": "2024-08-01", "type": "text" },
+                { "key": "expirationDate", "value": "2034-08-01", "type": "text" },
+                { "key": "productServiceGroup", "value": "Nhom 29 - Sua cao cap", "type": "text" },
+                { "key": "classification", "value": "Nhom 29", "type": "text" },
+                { "key": "status", "value": "Da cap van bang", "type": "text" },
+                { "key": "owner", "value": "{\"name\":\"Cong ty Co phan Sua Viet Nam (Vinamilk)\",\"address\":\"10 Tan Trao, P. Tan Phu, Q. 7, TP.HCM\"}", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Bo trong de giu anh cu" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/trademarks/{{trademarkId}}", "host": ["{{baseUrl}}"], "path": ["api", "trademarks", "{{trademarkId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Trademark",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/trademarks/{{trademarkId}}", "host": ["{{baseUrl}}"], "path": ["api", "trademarks", "{{trademarkId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "[404] Get Trademark - Khong ton tai",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/trademarks/9999999999", "host": ["{{baseUrl}}"], "path": ["api", "trademarks", "9999999999"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Geographical Indications",
+      "item": [
+        {
+          "name": "Get All Geographical Indications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/geographical-indications", "host": ["{{baseUrl}}"], "path": ["api", "geographical-indications"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Geographical Indications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/geographical-indications/search?q=Phu Quoc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "geographical-indications", "search"],
+              "query": [{ "key": "q", "value": "Phu Quoc" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Geographical Indication (luu geographicalIndicationId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('geographicalIndicationId', pm.response.json().id);",
+                  "    console.log('Tao chi dan dia ly OK, ID:', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Nuoc mam Phu Quoc", "type": "text" },
+                { "key": "product", "value": "Nuoc mam", "type": "text" },
+                { "key": "applicationNumber", "value": "CDDL-2024-001", "type": "text" },
+                { "key": "applicationDate", "value": "2024-02-01", "type": "text" },
+                { "key": "certificateNumber", "value": "CDDL-PQ-001", "type": "text" },
+                { "key": "grantDate", "value": "2024-05-15", "type": "text" },
+                { "key": "geographicalArea", "value": "Dao Phu Quoc, tinh Kien Giang", "type": "text" },
+                { "key": "description", "value": "Nuoc mam truyen thong duoc san xuat tu ca com tuoi va muoi bien tai dao Phu Quoc", "type": "text" },
+                { "key": "status", "value": "Da dang ky", "type": "text" },
+                { "key": "owner", "value": "{\"name\":\"UBND tinh Kien Giang\",\"address\":\"Duong Hung Vuong, TP. Rach Gia, Kien Giang\"}", "type": "text" },
+                { "key": "managementOrg", "value": "{\"name\":\"Hoi san xuat va kinh doanh nuoc mam Phu Quoc\",\"address\":\"Duong 30/4, TT. Duong Dong, Phu Quoc, Kien Giang\"}", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Chon anh (toi da 5)" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/geographical-indications", "host": ["{{baseUrl}}"], "path": ["api", "geographical-indications"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Geographical Indication by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/geographical-indications/{{geographicalIndicationId}}", "host": ["{{baseUrl}}"], "path": ["api", "geographical-indications", "{{geographicalIndicationId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Geographical Indication",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Nuoc mam Phu Quoc - Cap nhat", "type": "text" },
+                { "key": "product", "value": "Nuoc mam truyen thong", "type": "text" },
+                { "key": "applicationNumber", "value": "CDDL-2024-001", "type": "text" },
+                { "key": "applicationDate", "value": "2024-02-01", "type": "text" },
+                { "key": "certificateNumber", "value": "CDDL-PQ-001-V2", "type": "text" },
+                { "key": "grantDate", "value": "2024-06-01", "type": "text" },
+                { "key": "geographicalArea", "value": "Dao Phu Quoc, tinh Kien Giang, Viet Nam", "type": "text" },
+                { "key": "description", "value": "Mo ta cap nhat ve nuoc mam Phu Quoc", "type": "text" },
+                { "key": "status", "value": "Da dang ky bao ho", "type": "text" },
+                { "key": "owner", "value": "{\"name\":\"UBND tinh Kien Giang\",\"address\":\"Duong Hung Vuong, TP. Rach Gia, Kien Giang\"}", "type": "text" },
+                { "key": "managementOrg", "value": "{\"name\":\"Hoi san xuat va kinh doanh nuoc mam Phu Quoc\",\"address\":\"Duong 30/4, TT. Duong Dong, Phu Quoc, Kien Giang\"}", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Bo trong de giu anh cu" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/geographical-indications/{{geographicalIndicationId}}", "host": ["{{baseUrl}}"], "path": ["api", "geographical-indications", "{{geographicalIndicationId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Geographical Indication",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/geographical-indications/{{geographicalIndicationId}}", "host": ["{{baseUrl}}"], "path": ["api", "geographical-indications", "{{geographicalIndicationId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "[404] Get Geographical Indication - Khong ton tai",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/geographical-indications/9999999999", "host": ["{{baseUrl}}"], "path": ["api", "geographical-indications", "9999999999"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inventions",
+      "item": [
+        {
+          "name": "Get All Inventions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/inventions", "host": ["{{baseUrl}}"], "path": ["api", "inventions"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Inventions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventions/search?q=nang luong",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "inventions", "search"],
+              "query": [{ "key": "q", "value": "nang luong" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Invention (luu inventionId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('inventionId', pm.response.json().id);",
+                  "    console.log('Tao sang che OK, ID:', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "He thong thu hoi nang luong mat troi hieu suat cao", "type": "text" },
+                { "key": "applicationNumber", "value": "1-2024-05001", "type": "text" },
+                { "key": "applicationDate", "value": "2024-03-01", "type": "text" },
+                { "key": "publicationNumber", "value": "PB-SC-2024-05001", "type": "text" },
+                { "key": "publicationDate", "value": "2024-06-01", "type": "text" },
+                { "key": "certificateNumber", "value": "SC-2024-05001", "type": "text" },
+                { "key": "grantDate", "value": "2024-09-15", "type": "text" },
+                { "key": "ipcClassification", "value": "H02S 40/00", "type": "text" },
+                { "key": "status", "value": "Da cap bang doc quyen sang che", "type": "text" },
+                { "key": "owner", "value": "{\"name\":\"Truong Dai hoc Bach Khoa Ha Noi\",\"address\":\"01 Dai Co Viet, Hai Ba Trung, Ha Noi\"}", "type": "text" },
+                { "key": "authors", "value": "[{\"name\":\"PGS.TS Nguyen Van Hung\",\"address\":\"01 Dai Co Viet, Hai Ba Trung, Ha Noi\"},{\"name\":\"ThS. Le Thi Mai\",\"address\":\"45 Giai Phong, Hai Ba Trung, Ha Noi\"}]", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Chon anh (toi da 5)" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/inventions", "host": ["{{baseUrl}}"], "path": ["api", "inventions"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Invention by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/inventions/{{inventionId}}", "host": ["{{baseUrl}}"], "path": ["api", "inventions", "{{inventionId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Invention",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "He thong thu hoi nang luong mat troi hieu suat cao - V2", "type": "text" },
+                { "key": "applicationNumber", "value": "1-2024-05001", "type": "text" },
+                { "key": "applicationDate", "value": "2024-03-01", "type": "text" },
+                { "key": "publicationNumber", "value": "PB-SC-2024-05001", "type": "text" },
+                { "key": "publicationDate", "value": "2024-06-01", "type": "text" },
+                { "key": "certificateNumber", "value": "SC-2024-05001-V2", "type": "text" },
+                { "key": "grantDate", "value": "2024-10-01", "type": "text" },
+                { "key": "ipcClassification", "value": "H02S 40/10", "type": "text" },
+                { "key": "status", "value": "Da cap bang doc quyen sang che (cap nhat)", "type": "text" },
+                { "key": "owner", "value": "{\"name\":\"Truong Dai hoc Bach Khoa Ha Noi\",\"address\":\"01 Dai Co Viet, Hai Ba Trung, Ha Noi\"}", "type": "text" },
+                { "key": "authors", "value": "[{\"name\":\"PGS.TS Nguyen Van Hung\",\"address\":\"01 Dai Co Viet, Hai Ba Trung, Ha Noi\"},{\"name\":\"ThS. Pham Quoc Bao\",\"address\":\"78 Truong Chinh, Dong Da, Ha Noi\"}]", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Bo trong de giu anh cu" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/inventions/{{inventionId}}", "host": ["{{baseUrl}}"], "path": ["api", "inventions", "{{inventionId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Invention",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/inventions/{{inventionId}}", "host": ["{{baseUrl}}"], "path": ["api", "inventions", "{{inventionId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "[404] Get Invention - Khong ton tai",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/inventions/9999999999", "host": ["{{baseUrl}}"], "path": ["api", "inventions", "9999999999"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Industrial Designs",
+      "item": [
+        {
+          "name": "Get All Industrial Designs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/industrial-designs", "host": ["{{baseUrl}}"], "path": ["api", "industrial-designs"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Industrial Designs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/industrial-designs/search?q=chai",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "industrial-designs", "search"],
+              "query": [{ "key": "q", "value": "chai" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Industrial Design (luu industrialDesignId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.environment.set('industrialDesignId', pm.response.json().id);",
+                  "    console.log('Tao kieu dang OK, ID:', pm.response.json().id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Kieu dang chai nuoc giai khat hinh song bien", "type": "text" },
+                { "key": "applicationNumber", "value": "2-2024-20001", "type": "text" },
+                { "key": "applicationDate", "value": "2024-02-15", "type": "text" },
+                { "key": "publicationNumber", "value": "PB-KD-2024-20001", "type": "text" },
+                { "key": "publicationDate", "value": "2024-05-15", "type": "text" },
+                { "key": "certificateNumber", "value": "KD-2024-20001", "type": "text" },
+                { "key": "grantDate", "value": "2024-08-20", "type": "text" },
+                { "key": "expirationDate", "value": "2029-08-20", "type": "text" },
+                { "key": "locarnoClassification", "value": "09-01", "type": "text" },
+                { "key": "status", "value": "Da cap bang doc quyen kieu dang", "type": "text" },
+                { "key": "owner", "value": "{\"name\":\"Cong ty Co phan Do uong Tan Hiep Phat\",\"address\":\"219 Binh Duong, Thu Dau Mot, Binh Duong\"}", "type": "text" },
+                { "key": "authors", "value": "[{\"name\":\"Nguyen Thi Hoa\",\"address\":\"219 Binh Duong, Thu Dau Mot, Binh Duong\"},{\"name\":\"Tran Van Minh\",\"address\":\"55 Hai Ba Trung, Q.1, TP.HCM\"}]", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Chon anh (toi da 5)" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/industrial-designs", "host": ["{{baseUrl}}"], "path": ["api", "industrial-designs"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Industrial Design by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/industrial-designs/{{industrialDesignId}}", "host": ["{{baseUrl}}"], "path": ["api", "industrial-designs", "{{industrialDesignId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Industrial Design",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Kieu dang chai nuoc giai khat hinh song bien - V2", "type": "text" },
+                { "key": "applicationNumber", "value": "2-2024-20001", "type": "text" },
+                { "key": "applicationDate", "value": "2024-02-15", "type": "text" },
+                { "key": "publicationNumber", "value": "PB-KD-2024-20001", "type": "text" },
+                { "key": "publicationDate", "value": "2024-05-15", "type": "text" },
+                { "key": "certificateNumber", "value": "KD-2024-20001-V2", "type": "text" },
+                { "key": "grantDate", "value": "2024-09-01", "type": "text" },
+                { "key": "expirationDate", "value": "2029-09-01", "type": "text" },
+                { "key": "locarnoClassification", "value": "09-01", "type": "text" },
+                { "key": "status", "value": "Da cap bang (cap nhat)", "type": "text" },
+                { "key": "owner", "value": "{\"name\":\"Cong ty Co phan Do uong Tan Hiep Phat\",\"address\":\"219 Binh Duong, Thu Dau Mot, Binh Duong\"}", "type": "text" },
+                { "key": "authors", "value": "[{\"name\":\"Nguyen Thi Hoa\",\"address\":\"219 Binh Duong, Thu Dau Mot, Binh Duong\"}]", "type": "text" },
+                { "key": "images", "type": "file", "src": [], "description": "Bo trong de giu anh cu" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/api/industrial-designs/{{industrialDesignId}}", "host": ["{{baseUrl}}"], "path": ["api", "industrial-designs", "{{industrialDesignId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Industrial Design",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}", "type": "text" }],
+            "url": { "raw": "{{baseUrl}}/api/industrial-designs/{{industrialDesignId}}", "host": ["{{baseUrl}}"], "path": ["api", "industrial-designs", "{{industrialDesignId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "[404] Get Industrial Design - Khong ton tai",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/industrial-designs/9999999999", "host": ["{{baseUrl}}"], "path": ["api", "industrial-designs", "9999999999"] }
           },
           "response": []
         }

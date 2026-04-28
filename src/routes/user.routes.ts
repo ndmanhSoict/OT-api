@@ -8,6 +8,7 @@ const router = Router();
 router.post('/', authenticateJWT, isAdmin, UserController.createUser);
 router.put('/:id', authenticateJWT, isAdmin, UserController.updateUser);
 router.get('/:id', authenticateJWT, isAdmin, UserController.getUserById);
+router.get('/', authenticateJWT, isAdmin, UserController.getUserAll);
 router.delete('/:id', authenticateJWT, isAdmin, UserController.deleteUser);
 
 export default router;

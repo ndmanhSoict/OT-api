@@ -5,6 +5,9 @@ import { authenticateJWT, isAdminOrStaff } from '../middlewares/auth.middleware'
 
 const router = Router();
 
+router.get('/search', CopyrightController.search);
+router.get('/search-all', authenticateJWT, isAdminOrStaff, CopyrightController.searchAll);
+router.get('/', CopyrightController.getAll);
 router.get('/:id', CopyrightController.getCopyright);
 
 // Cho phép upload tối đa 5 ảnh với key là 'images'
