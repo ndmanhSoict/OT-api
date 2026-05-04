@@ -20,6 +20,10 @@ info:
     ## Upload ảnh
     Các endpoint POST/PUT sử dụng `multipart/form-data`.
     Trường `owner`, `authors`, `managementOrg` truyền dưới dạng **JSON string** trong form.
+
+    ## Lưu ý mã lỗi xác thực
+    - `401` — Thiếu token (không có header Authorization)
+    - `403` — Token không hợp lệ / hết hạn, hoặc không đủ quyền (sai role)
   version: 1.0.0
 
 servers:
@@ -158,7 +162,41 @@ components:
           enum: [admin, staff]
           example: admin
 
+    # ── User login response (không có fullName) ──
+    UserLoginObject:
+      type: object
+      description: Thông tin user trả về sau khi đăng nhập (không bao gồm fullName)
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1714100000000
+        username:
+          type: string
+          example: admin
+        role:
+          type: string
+          enum: [admin, staff]
+          example: admin
+
     # ── Copyright ───────────────────────────────
+    CopyrightStakeholder:
+      type: object
+      description: |
+        Stakeholder trong chi tiết bản quyền. Lưu ý: trường `role` (author/owner) được
+        trả về từ bảng liên kết, không có trường `id`.
+      properties:
+        name:
+          type: string
+          example: Nguyễn Văn A
+        address:
+          type: string
+          example: 123 Lê Lợi, Hà Nội
+        role:
+          type: string
+          enum: [author, owner]
+          example: author
+
     CopyrightDetail:
       type: object
       properties:
@@ -185,11 +223,11 @@ components:
         authors:
           type: array
           items:
-            $ref: '#/components/schemas/StakeholderObject'
+            $ref: '#/components/schemas/CopyrightStakeholder'
         owners:
           type: array
           items:
-            $ref: '#/components/schemas/StakeholderObject'
+            $ref: '#/components/schemas/CopyrightStakeholder'
 
     # ── Craft Village ────────────────────────────
     CraftVillageDetail:
@@ -216,6 +254,8 @@ components:
           example: "2010-05-20"
         imageUrls:
           type: string
+          description: JSON array lưu đường dẫn ảnh
+          example: '["/uploads/img1.jpg"]'
 
     # ── Trademark ───────────────────────────────
     TrademarkDetail:
@@ -263,8 +303,14 @@ components:
         status:
           type: string
           example: Đã cấp văn bằng
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
+          example: 1714200000002
         imageUrls:
           type: string
+          description: JSON array lưu đường dẫn ảnh
         owner:
           nullable: true
           allOf:
@@ -304,8 +350,17 @@ components:
         status:
           type: string
           example: Đã đăng ký
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
+        managementOrgId:
+          type: integer
+          format: int64
+          nullable: true
         imageUrls:
           type: string
+          description: JSON array lưu đường dẫn ảnh
         owner:
           nullable: true
           allOf:
@@ -349,8 +404,13 @@ components:
         status:
           type: string
           example: Đã cấp bằng độc quyền sáng chế
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
         imageUrls:
           type: string
+          description: JSON array lưu đường dẫn ảnh
         owner:
           nullable: true
           allOf:
@@ -397,8 +457,13 @@ components:
         status:
           type: string
           example: Đã cấp bằng độc quyền kiểu dáng
+        ownerId:
+          type: integer
+          format: int64
+          nullable: true
         imageUrls:
           type: string
+          description: JSON array lưu đường dẫn ảnh
         owner:
           nullable: true
           allOf:
@@ -486,6 +551,7 @@ components:
           example: 1714200000002
         imageUrls:
           type: string
+          description: JSON array string chứa đường dẫn ảnh
 
     GeographicalIndicationRow:
       type: object
@@ -530,6 +596,7 @@ components:
           nullable: true
         imageUrls:
           type: string
+          description: JSON array string chứa đường dẫn ảnh
 
     InventionRow:
       type: object
@@ -570,6 +637,7 @@ components:
           nullable: true
         imageUrls:
           type: string
+          description: JSON array string chứa đường dẫn ảnh
 
     IndustrialDesignRow:
       type: object
@@ -613,11 +681,12 @@ components:
           nullable: true
         imageUrls:
           type: string
+          description: JSON array string chứa đường dẫn ảnh
 
   # ── Reusable responses ──────────────────────
   responses:
     Unauthorized:
-      description: Chưa xác thực — thiếu hoặc sai token
+      description: Chưa xác thực — thiếu token (Authorization header không có)
       content:
         application/json:
           schema:
@@ -625,6 +694,15 @@ components:
           example:
             success: false
             message: Unauthorized
+    Forbidden:
+      description: Không đủ quyền — token không hợp lệ/hết hạn, hoặc sai role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            message: Forbidden
     NotFound:
       description: Không tìm thấy tài nguyên
       content:
@@ -698,7 +776,9 @@ paths:
       tags: [Auth]
       summary: Đăng nhập
       operationId: login
-      description: Trả về `accessToken` (hết hạn sau 15 phút) và `refreshToken` (7 ngày).
+      description: |
+        Trả về `accessToken` (hết hạn sau 15 phút) và `refreshToken` (7 ngày).
+        Trường `user` trong response chỉ gồm `id`, `username`, `role` (không có `fullName`).
       requestBody:
         required: true
         content:
@@ -731,7 +811,7 @@ paths:
                     type: object
                     properties:
                       user:
-                        $ref: '#/components/schemas/UserObject'
+                        $ref: '#/components/schemas/UserLoginObject'
                       accessToken:
                         type: string
                         example: eyJhbGciOiJIUzI1NiJ9...
@@ -744,12 +824,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Vui lòng cung cấp username và password
         '401':
           description: Sai username hoặc mật khẩu
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: username hoặc mật khẩu không đúng
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -758,7 +844,11 @@ paths:
       tags: [Auth]
       summary: Làm mới Access Token
       operationId: refreshToken
-      description: Dùng `refreshToken` để lấy `accessToken` mới mà không cần đăng nhập lại.
+      description: |
+        Dùng `refreshToken` để lấy `accessToken` mới mà không cần đăng nhập lại.
+
+        - `401` — Không có refreshToken trong body
+        - `403` — RefreshToken không hợp lệ/hết hạn, hoặc user không còn tồn tại
       requestBody:
         required: true
         content:
@@ -793,12 +883,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Không tìm thấy Refresh Token
         '403':
           description: RefreshToken không hợp lệ hoặc đã hết hạn
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Refresh Token không hợp lệ hoặc đã hết hạn
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -806,12 +902,50 @@ paths:
   # USERS
   # ════════════════════════════════
   /api/users:
+    get:
+      tags: [Users]
+      summary: Lấy danh sách tất cả tài khoản
+      operationId: getAllUsers
+      security:
+        - bearerAuth: []
+      description: Chỉ Admin được phép. Trả về 404 nếu chưa có tài khoản nào.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserObject'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Chưa có tài khoản nào
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Không tìm thấy tài khoản
+        '500':
+          $ref: '#/components/responses/ServerError'
     post:
       tags: [Users]
       summary: Tạo tài khoản mới
       operationId: createUser
       security:
         - bearerAuth: []
+      description: Chỉ Admin được phép.
       requestBody:
         required: true
         content:
@@ -855,14 +989,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Vui lòng cung cấp đủ thông tin
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '409':
           description: Username đã tồn tại
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Username này đã tồn tại
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -882,6 +1024,7 @@ paths:
       operationId: getUserById
       security:
         - bearerAuth: []
+      description: Chỉ Admin được phép.
       responses:
         '200':
           description: OK
@@ -897,6 +1040,8 @@ paths:
                     $ref: '#/components/schemas/UserObject'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -907,6 +1052,9 @@ paths:
       operationId: updateUser
       security:
         - bearerAuth: []
+      description: |
+        Chỉ Admin được phép. Response `data` chỉ trả về `id`, `fullName`, `role`
+        (không có `username`).
       requestBody:
         required: true
         content:
@@ -938,9 +1086,23 @@ paths:
                     type: string
                     example: Cập nhật tài khoản thành công
                   data:
-                    $ref: '#/components/schemas/UserObject'
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        format: int64
+                        example: 1714100000000
+                      fullName:
+                        type: string
+                        example: Nguyễn Văn A - Đã cập nhật
+                      role:
+                        type: string
+                        enum: [admin, staff]
+                        example: staff
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -951,6 +1113,7 @@ paths:
       operationId: deleteUser
       security:
         - bearerAuth: []
+      description: Chỉ Admin được phép.
       responses:
         '200':
           description: Xóa thành công
@@ -958,8 +1121,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Xóa tài khoản thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -973,14 +1141,16 @@ paths:
       tags: [Stakeholders]
       summary: Tìm kiếm chủ thể
       operationId: searchStakeholders
-      description: Tìm đồng thời trên các trường `name`, `address`.
+      description: |
+        Tìm kiếm **OR** trên 2 trường `name` và `address`. Nếu không truyền `q`,
+        tìm với chuỗi rỗng (trả về tất cả).
       parameters:
         - name: q
           in: query
           required: false
           schema:
             type: string
-          description: Từ khóa tìm kiếm
+          description: Từ khóa tìm kiếm (khớp với name hoặc address)
           example: Nguyễn
       responses:
         '200':
@@ -1012,6 +1182,7 @@ paths:
       operationId: createStakeholder
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff.
       requestBody:
         required: true
         content:
@@ -1025,14 +1196,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessWithId'
+              example:
+                success: true
+                message: Tạo chủ thể thành công
+                id: 1714200000001
         '400':
           description: Tên chủ thể là bắt buộc
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Tên chủ thể là bắt buộc
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1066,6 +1246,7 @@ paths:
       operationId: updateStakeholder
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff.
       requestBody:
         required: true
         content:
@@ -1079,8 +1260,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Cập nhật chủ thể thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -1091,6 +1277,7 @@ paths:
       operationId: deleteStakeholder
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff.
       responses:
         '200':
           description: Xóa thành công
@@ -1098,8 +1285,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Đã xóa chủ thể thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -1166,6 +1358,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Cần truyền ít nhất một trường tìm kiếm. Các trường hợp lệ: certificateNumber, title, type, grantDate"
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1208,8 +1403,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Cần truyền tham số q
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1242,6 +1442,9 @@ paths:
       operationId: createCopyright
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Trường `authors` và `owners` truyền dưới dạng **JSON array string**.
       requestBody:
         required: true
         content:
@@ -1283,8 +1486,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessWithId'
+              example:
+                success: true
+                message: Tạo bản quyền thành công
+                id: 1714200000000
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1301,7 +1510,10 @@ paths:
       tags: [Copyrights]
       summary: Xem chi tiết bản quyền
       operationId: getCopyrightById
-      description: Trả về bản quyền kèm danh sách `authors` và `owners`.
+      description: |
+        Trả về bản quyền kèm danh sách `authors` và `owners`.
+        Lưu ý: mỗi phần tử trong `authors`/`owners` có trường `role` (author/owner) từ bảng liên kết,
+        nhưng không có trường `id`.
       responses:
         '200':
           description: OK
@@ -1325,6 +1537,9 @@ paths:
       operationId: updateCopyright
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên. Danh sách authors/owners sẽ được thay thế hoàn toàn.
       requestBody:
         required: true
         content:
@@ -1343,10 +1558,10 @@ paths:
                   type: string
                 authors:
                   type: string
-                  description: JSON array string
+                  description: 'JSON array string — [{"name":"...","address":"..."}]'
                 owners:
                   type: string
-                  description: JSON array string
+                  description: 'JSON array string — [{"name":"...","address":"..."}]'
                 images:
                   type: array
                   items:
@@ -1360,8 +1575,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Cập nhật thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -1372,6 +1592,7 @@ paths:
       operationId: deleteCopyright
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff. Xóa cascade xuống bảng copyrightAuthors.
       responses:
         '200':
           description: Xóa thành công
@@ -1379,8 +1600,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Đã xóa bản quyền thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -1452,6 +1678,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Cần truyền ít nhất một trường tìm kiếm. Các trường hợp lệ: name, product, address, certificateNumber, recognitionDate"
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1494,8 +1723,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Cần truyền tham số q
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1527,6 +1761,7 @@ paths:
       operationId: createCraftVillage
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
       requestBody:
         required: true
         content:
@@ -1555,6 +1790,7 @@ paths:
                   items:
                     type: string
                     format: binary
+                  description: File ảnh, tối đa 5 file
       responses:
         '201':
           description: Tạo thành công
@@ -1562,8 +1798,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessWithId'
+              example:
+                success: true
+                message: Tạo làng nghề thành công
+                id: 1714200000000
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1603,6 +1845,7 @@ paths:
       operationId: updateCraftVillage
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff. Nếu không upload ảnh mới, ảnh cũ được giữ nguyên.
       requestBody:
         required: true
         content:
@@ -1634,8 +1877,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Cập nhật làng nghề thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -1646,6 +1894,7 @@ paths:
       operationId: deleteCraftVillage
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff.
       responses:
         '200':
           description: Xóa thành công
@@ -1653,8 +1902,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Đã xóa làng nghề thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -1769,6 +2023,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Cần truyền ít nhất một trường tìm kiếm. Các trường hợp lệ: trademarkSample, name, type, applicationNumber, publicationNumber, certificateNumber, productServiceGroup, classification, status, applicationDate, publicationDate, grantDate, expirationDate"
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1813,8 +2070,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Cần truyền tham số q
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1847,6 +2109,9 @@ paths:
       operationId: createTrademark
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Trường `owner` truyền dưới dạng **JSON object string**.
       requestBody:
         required: true
         content:
@@ -1905,6 +2170,7 @@ paths:
                   items:
                     type: string
                     format: binary
+                  description: File ảnh, tối đa 5 file
       responses:
         '201':
           description: Tạo thành công
@@ -1912,8 +2178,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessWithId'
+              example:
+                success: true
+                message: Tạo nhãn hiệu thành công
+                id: 1714200000000
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -1930,7 +2202,9 @@ paths:
       tags: [Trademarks]
       summary: Xem chi tiết nhãn hiệu
       operationId: getTrademarkById
-      description: Trả về nhãn hiệu kèm thông tin `owner`.
+      description: |
+        Trả về nhãn hiệu kèm thông tin `owner` (object lồng nhau).
+        Response cũng giữ lại trường `ownerId` cùng với object `owner`.
       responses:
         '200':
           description: OK
@@ -1954,6 +2228,10 @@ paths:
       operationId: updateTrademark
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên.
+        Nếu truyền `owner`, owner cũ sẽ bị thay thế (ownerId set về null nếu không truyền owner).
       requestBody:
         required: true
         content:
@@ -1993,7 +2271,7 @@ paths:
                   type: string
                 owner:
                   type: string
-                  description: JSON object string
+                  description: 'JSON object string — {"name":"...","address":"..."}'
                 images:
                   type: array
                   items:
@@ -2007,8 +2285,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Cập nhật nhãn hiệu thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -2019,6 +2302,7 @@ paths:
       operationId: deleteTrademark
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff.
       responses:
         '200':
           description: Xóa thành công
@@ -2026,8 +2310,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Đã xóa nhãn hiệu thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -2120,6 +2409,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Cần truyền ít nhất một trường tìm kiếm. Các trường hợp lệ: name, product, applicationNumber, certificateNumber, geographicalArea, description, status, applicationDate, grantDate"
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -2163,8 +2455,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Cần truyền tham số q
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -2197,6 +2494,9 @@ paths:
       operationId: createGeographicalIndication
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Trường `owner` và `managementOrg` truyền dưới dạng **JSON object string**.
       requestBody:
         required: true
         content:
@@ -2237,13 +2537,14 @@ paths:
                   example: '{"name":"UBND tỉnh Kiên Giang","address":"Đường Hùng Vương, TP. Rạch Giá"}'
                 managementOrg:
                   type: string
-                  description: 'JSON object — Tổ chức quản lý chỉ dẫn'
+                  description: 'JSON object — Tổ chức quản lý chỉ dẫn — {"name":"...","address":"..."}'
                   example: '{"name":"Hội sản xuất nước mắm Phú Quốc","address":"Đường 30/4, Dương Đông, Phú Quốc"}'
                 images:
                   type: array
                   items:
                     type: string
                     format: binary
+                  description: File ảnh, tối đa 5 file
       responses:
         '201':
           description: Tạo thành công
@@ -2251,8 +2552,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessWithId'
+              example:
+                success: true
+                message: Tạo chỉ dẫn địa lý thành công
+                id: 1714200000000
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -2269,7 +2576,9 @@ paths:
       tags: [Geographical Indications]
       summary: Xem chi tiết chỉ dẫn địa lý
       operationId: getGeographicalIndicationById
-      description: Trả về chỉ dẫn địa lý kèm `owner` và `managementOrg`.
+      description: |
+        Trả về chỉ dẫn địa lý kèm `owner` và `managementOrg` (object lồng nhau).
+        Response cũng giữ lại trường `ownerId` và `managementOrgId`.
       responses:
         '200':
           description: OK
@@ -2293,6 +2602,10 @@ paths:
       operationId: updateGeographicalIndication
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên.
+        Nếu không truyền `owner`/`managementOrg`, giá trị tương ứng sẽ được set về null.
       requestBody:
         required: true
         content:
@@ -2322,10 +2635,10 @@ paths:
                   type: string
                 owner:
                   type: string
-                  description: JSON object string
+                  description: 'JSON object string — {"name":"...","address":"..."}'
                 managementOrg:
                   type: string
-                  description: JSON object string
+                  description: 'JSON object string — {"name":"...","address":"..."}'
                 images:
                   type: array
                   items:
@@ -2339,8 +2652,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Cập nhật chỉ dẫn địa lý thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -2351,6 +2669,7 @@ paths:
       operationId: deleteGeographicalIndication
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff.
       responses:
         '200':
           description: Xóa thành công
@@ -2358,8 +2677,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Đã xóa chỉ dẫn địa lý thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -2451,6 +2775,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Cần truyền ít nhất một trường tìm kiếm. Các trường hợp lệ: name, applicationNumber, publicationNumber, certificateNumber, ipcClassification, status, applicationDate, publicationDate, grantDate"
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -2494,8 +2821,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Cần truyền tham số q
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -2528,6 +2860,9 @@ paths:
       operationId: createInvention
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Trường `owner` truyền dưới dạng **JSON object string**, `authors` truyền dưới dạng **JSON array string**.
       requestBody:
         required: true
         content:
@@ -2576,6 +2911,7 @@ paths:
                   items:
                     type: string
                     format: binary
+                  description: File ảnh, tối đa 5 file
       responses:
         '201':
           description: Tạo thành công
@@ -2583,8 +2919,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessWithId'
+              example:
+                success: true
+                message: Tạo sáng chế thành công
+                id: 1714200000000
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -2601,7 +2943,9 @@ paths:
       tags: [Inventions]
       summary: Xem chi tiết sáng chế
       operationId: getInventionById
-      description: Trả về sáng chế kèm `owner` và mảng `authors`.
+      description: |
+        Trả về sáng chế kèm `owner` (object lồng nhau) và mảng `authors` (mỗi phần tử có `id`, `name`, `address`).
+        Response cũng giữ lại trường `ownerId`.
       responses:
         '200':
           description: OK
@@ -2625,6 +2969,10 @@ paths:
       operationId: updateInvention
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên. Danh sách `authors` sẽ được thay thế hoàn toàn.
+        Nếu không truyền `owner`, ownerId sẽ được set về null.
       requestBody:
         required: true
         content:
@@ -2655,10 +3003,10 @@ paths:
                   type: string
                 owner:
                   type: string
-                  description: JSON object string
+                  description: 'JSON object string — {"name":"...","address":"..."}'
                 authors:
                   type: string
-                  description: JSON array string
+                  description: 'JSON array string — [{"name":"...","address":"..."}]'
                 images:
                   type: array
                   items:
@@ -2672,8 +3020,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Cập nhật sáng chế thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -2684,6 +3037,7 @@ paths:
       operationId: deleteInvention
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff.
       responses:
         '200':
           description: Xóa thành công
@@ -2691,8 +3045,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Đã xóa sáng chế thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -2789,6 +3148,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: "Cần truyền ít nhất một trường tìm kiếm. Các trường hợp lệ: name, applicationNumber, publicationNumber, certificateNumber, locarnoClassification, status, applicationDate, publicationDate, grantDate, expirationDate"
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -2833,8 +3195,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                message: Cần truyền tham số q
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -2867,6 +3234,9 @@ paths:
       operationId: createIndustrialDesign
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Trường `owner` truyền dưới dạng **JSON object string**, `authors` truyền dưới dạng **JSON array string**.
       requestBody:
         required: true
         content:
@@ -2919,6 +3289,7 @@ paths:
                   items:
                     type: string
                     format: binary
+                  description: File ảnh, tối đa 5 file
       responses:
         '201':
           description: Tạo thành công
@@ -2926,8 +3297,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessWithId'
+              example:
+                success: true
+                message: Tạo kiểu dáng công nghiệp thành công
+                id: 1714200000000
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '500':
           $ref: '#/components/responses/ServerError'
 
@@ -2944,7 +3321,9 @@ paths:
       tags: [Industrial Designs]
       summary: Xem chi tiết kiểu dáng công nghiệp
       operationId: getIndustrialDesignById
-      description: Trả về kiểu dáng kèm `owner` và mảng `authors`.
+      description: |
+        Trả về kiểu dáng kèm `owner` (object lồng nhau) và mảng `authors` (mỗi phần tử có `id`, `name`, `address`).
+        Response cũng giữ lại trường `ownerId`.
       responses:
         '200':
           description: OK
@@ -2968,6 +3347,10 @@ paths:
       operationId: updateIndustrialDesign
       security:
         - bearerAuth: []
+      description: |
+        Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
+        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên. Danh sách `authors` sẽ được thay thế hoàn toàn.
+        Nếu không truyền `owner`, ownerId sẽ được set về null.
       requestBody:
         required: true
         content:
@@ -3001,10 +3384,10 @@ paths:
                   type: string
                 owner:
                   type: string
-                  description: JSON object string
+                  description: 'JSON object string — {"name":"...","address":"..."}'
                 authors:
                   type: string
-                  description: JSON array string
+                  description: 'JSON array string — [{"name":"...","address":"..."}]'
                 images:
                   type: array
                   items:
@@ -3018,8 +3401,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Cập nhật kiểu dáng công nghiệp thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -3030,6 +3418,7 @@ paths:
       operationId: deleteIndustrialDesign
       security:
         - bearerAuth: []
+      description: Yêu cầu Admin hoặc Staff.
       responses:
         '200':
           description: Xóa thành công
@@ -3037,8 +3426,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessMessage'
+              example:
+                success: true
+                message: Đã xóa kiểu dáng công nghiệp thành công
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':

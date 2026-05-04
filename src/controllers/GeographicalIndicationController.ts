@@ -29,7 +29,8 @@ export class GeographicalIndicationController {
       }
 
       if (conditions.length === 0) {
-        res.status(400).json({ success: false, message: `Cần truyền ít nhất một trường tìm kiếm. Các trường hợp lệ: ${Object.keys(allowedFields).join(', ')}` });
+        const [rows]: any = await pool.query('SELECT * FROM geographicalIndications ORDER BY id DESC');
+        res.status(200).json({ success: true, data: rows });
         return;
       }
 

@@ -5,7 +5,14 @@ export class StakeholderController {
 
   static async search(req: Request, res: Response): Promise<void> {
     try {
-      const q = `%${req.query.q ?? ''}%`;
+      const rawQ = ((req.query.q as string) ?? '').trim();
+      if (!rawQ) {
+        const [rows]: any = await pool.query('SELECT * FROM stakeholders ORDER BY id DESC');
+        res.status(200).json({ success: true, data: rows });
+        return;
+      }
+
+      const q = `%${rawQ}%`;
       const [rows]: any = await pool.query(
         'SELECT * FROM stakeholders WHERE name LIKE ? OR address LIKE ?',
         [q, q]
