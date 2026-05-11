@@ -27,12 +27,15 @@ ALTER TABLE geographicalIndications MODIFY COLUMN ownerId BIGINT;
 ALTER TABLE geographicalIndications MODIFY COLUMN managementOrgId BIGINT;
 
 ALTER TABLE trademarks MODIFY COLUMN id BIGINT NOT NULL;
+ALTER TABLE trademarks ADD COLUMN IF NOT EXISTS applicantId BIGINT NULL AFTER classification;
 ALTER TABLE trademarks MODIFY COLUMN ownerId BIGINT;
 
 ALTER TABLE inventions MODIFY COLUMN id BIGINT NOT NULL;
+ALTER TABLE inventions ADD COLUMN IF NOT EXISTS applicantId BIGINT NULL AFTER ipcClassification;
 ALTER TABLE inventions MODIFY COLUMN ownerId BIGINT;
 
 ALTER TABLE industrialDesigns MODIFY COLUMN id BIGINT NOT NULL;
+ALTER TABLE industrialDesigns ADD COLUMN IF NOT EXISTS applicantId BIGINT NULL AFTER locarnoClassification;
 ALTER TABLE industrialDesigns MODIFY COLUMN ownerId BIGINT;
 
 ALTER TABLE craftVillages MODIFY COLUMN id BIGINT NOT NULL;
@@ -42,6 +45,19 @@ ALTER TABLE inventionAuthors MODIFY COLUMN stakeholderId BIGINT NOT NULL;
 
 ALTER TABLE industrialDesignAuthors MODIFY COLUMN industrialDesignId BIGINT NOT NULL;
 ALTER TABLE industrialDesignAuthors MODIFY COLUMN stakeholderId BIGINT NOT NULL;
+
+-- 5. Bổ sung FK cho chủ đơn nếu DB chưa có
+ALTER TABLE trademarks
+  ADD CONSTRAINT fk_trademarks_applicant
+  FOREIGN KEY (applicantId) REFERENCES stakeholders(id) ON DELETE SET NULL;
+
+ALTER TABLE inventions
+  ADD CONSTRAINT fk_inventions_applicant
+  FOREIGN KEY (applicantId) REFERENCES stakeholders(id) ON DELETE SET NULL;
+
+ALTER TABLE industrialDesigns
+  ADD CONSTRAINT fk_industrial_designs_applicant
+  FOREIGN KEY (applicantId) REFERENCES stakeholders(id) ON DELETE SET NULL;
 
 SET FOREIGN_KEY_CHECKS = 1;
 

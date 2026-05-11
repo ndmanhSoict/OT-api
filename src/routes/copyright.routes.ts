@@ -7,6 +7,8 @@ const router = Router();
 
 router.get('/search', CopyrightController.search);
 router.get('/search-all', authenticateJWT, isAdminOrStaff, CopyrightController.searchAll);
+router.get('/export', authenticateJWT, isAdminOrStaff, CopyrightController.exportRows);
+router.post('/import', authenticateJWT, isAdminOrStaff, CopyrightController.importRows);
 router.get('/', CopyrightController.getAll);
 router.get('/:id', CopyrightController.getCopyright);
 

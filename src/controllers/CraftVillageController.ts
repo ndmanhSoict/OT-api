@@ -1,5 +1,8 @@
+import fs from 'fs';
+import path from 'path';
 import { Request, Response } from 'express';
 import pool from '../config/database';
+import { asDate, asText, getCell, getRows, hasAnyValue } from '../utils/importRows';
 
 export class CraftVillageController {
 
@@ -60,6 +63,83 @@ export class CraftVillageController {
     }
   }
 
+  static async exportRows(req: Request, res: Response): Promise<void> {
+    try {
+      const rawQ = ((req.query.q as string) ?? '').trim();
+      const baseSql = `
+        SELECT name, product, address, certificateNumber, recognitionDate
+        FROM craftVillages
+      `;
+
+      if (!rawQ) {
+        const [rows]: any = await pool.query(`${baseSql} ORDER BY id DESC`);
+        res.status(200).json({ success: true, data: rows });
+        return;
+      }
+
+      const q = `%${rawQ}%`;
+      const [rows]: any = await pool.query(
+        `${baseSql}
+         WHERE name LIKE ? OR product LIKE ? OR address LIKE ? OR certificateNumber LIKE ?
+            OR CAST(recognitionDate AS CHAR) LIKE ?
+         ORDER BY id DESC`,
+        [q, q, q, q, q]
+      );
+      res.status(200).json({ success: true, data: rows });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: 'Lỗi xuất dữ liệu làng nghề', error: error.message });
+    }
+  }
+
+  static async importRows(req: Request, res: Response): Promise<void> {
+    const rows = getRows(req.body).filter(hasAnyValue);
+    if (rows.length === 0) {
+      res.status(400).json({ success: false, message: 'File Excel không có dữ liệu hợp lệ' });
+      return;
+    }
+
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      let imported = 0;
+      let skipped = 0;
+      const baseId = Date.now();
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const name = asText(getCell(row, ['Tên làng nghề', 'name']));
+        if (!name) {
+          skipped++;
+          continue;
+        }
+
+        await connection.query(
+          `INSERT INTO craftVillages
+            (id, name, product, address, certificateNumber, recognitionDate, imageUrls)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            baseId + i,
+            name,
+            asText(getCell(row, ['Sản phẩm', 'product'])),
+            asText(getCell(row, ['Địa chỉ', 'address'])),
+            asText(getCell(row, ['Số chứng nhận', 'certificateNumber'])),
+            asDate(getCell(row, ['Ngày công nhận', 'recognitionDate'])),
+            JSON.stringify([]),
+          ]
+        );
+        imported++;
+      }
+
+      await connection.commit();
+      res.status(201).json({ success: true, message: `Đã import ${imported} dòng`, imported, skipped });
+    } catch (error: any) {
+      await connection.rollback();
+      res.status(500).json({ success: false, message: 'Lỗi import làng nghề', error: error.message });
+    } finally {
+      connection.release();
+    }
+  }
+
   static async getAll(_req: Request, res: Response): Promise<void> {
     try {
       const [rows]: any = await pool.query('SELECT * FROM craftVillages ORDER BY id DESC');
@@ -111,10 +191,21 @@ export class CraftVillageController {
         return;
       }
 
+      const oldUrls: string[] = JSON.parse(existing[0].imageUrls || '[]');
+      const keepUrls: string[] = req.body.existingImages !== undefined
+        ? JSON.parse(req.body.existingImages || '[]')
+        : oldUrls;
+
+      for (const url of oldUrls) {
+        if (!keepUrls.includes(url)) {
+          const filePath = path.join(process.cwd(), 'uploads', path.basename(url));
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+      }
+
       const files = req.files as Express.Multer.File[];
-      const finalImageUrls = files && files.length > 0
-        ? JSON.stringify(files.map(f => `/uploads/${f.filename}`))
-        : existing[0].imageUrls;
+      const newUrls = files ? files.map(f => `/uploads/${f.filename}`) : [];
+      const finalImageUrls = JSON.stringify([...keepUrls, ...newUrls]);
 
       await pool.query(
         'UPDATE craftVillages SET name=?, product=?, address=?, certificateNumber=?, recognitionDate=?, imageUrls=? WHERE id=?',

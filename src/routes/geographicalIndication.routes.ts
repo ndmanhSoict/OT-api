@@ -7,6 +7,8 @@ const router = Router();
 
 router.get('/search', GeographicalIndicationController.search);
 router.get('/search-all', authenticateJWT, isAdminOrStaff, GeographicalIndicationController.searchAll);
+router.get('/export', authenticateJWT, isAdminOrStaff, GeographicalIndicationController.exportRows);
+router.post('/import', authenticateJWT, isAdminOrStaff, GeographicalIndicationController.importRows);
 router.get('/', GeographicalIndicationController.getAll);
 router.get('/:id', GeographicalIndicationController.getById);
 router.post('/', authenticateJWT, isAdminOrStaff, upload.array('images', 5), GeographicalIndicationController.create);

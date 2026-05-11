@@ -7,6 +7,8 @@ const router = Router();
 
 router.get('/search', CraftVillageController.search);
 router.get('/search-all', authenticateJWT, isAdminOrStaff, CraftVillageController.searchAll);
+router.get('/export', authenticateJWT, isAdminOrStaff, CraftVillageController.exportRows);
+router.post('/import', authenticateJWT, isAdminOrStaff, CraftVillageController.importRows);
 router.get('/', CraftVillageController.getAll);
 router.get('/:id', CraftVillageController.getById);
 router.post('/', authenticateJWT, isAdminOrStaff, upload.array('images', 5), CraftVillageController.create);

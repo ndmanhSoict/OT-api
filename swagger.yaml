@@ -1539,7 +1539,11 @@ paths:
         - bearerAuth: []
       description: |
         Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
-        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên. Danh sách authors/owners sẽ được thay thế hoàn toàn.
+        Danh sách authors/owners sẽ được thay thế hoàn toàn.
+
+        **Xử lý ảnh:** Truyền `existingImages` là JSON array các URL ảnh cũ muốn **giữ lại**.
+        Ảnh cũ không có trong danh sách sẽ bị xóa khỏi server. Thêm file mới qua `images`.
+        Nếu không truyền `existingImages`, toàn bộ ảnh cũ được giữ nguyên.
       requestBody:
         required: true
         content:
@@ -1562,12 +1566,16 @@ paths:
                 owners:
                   type: string
                   description: 'JSON array string — [{"name":"...","address":"..."}]'
+                existingImages:
+                  type: string
+                  description: 'JSON array URL ảnh cũ cần giữ lại — ["/uploads/img1.jpg"]'
+                  example: '["/uploads/1714200000000-123.jpg"]'
                 images:
                   type: array
                   items:
                     type: string
                     format: binary
-                  description: Bỏ trống để giữ ảnh cũ
+                  description: File ảnh mới cần thêm vào
       responses:
         '200':
           description: Cập nhật thành công
@@ -1845,7 +1853,12 @@ paths:
       operationId: updateCraftVillage
       security:
         - bearerAuth: []
-      description: Yêu cầu Admin hoặc Staff. Nếu không upload ảnh mới, ảnh cũ được giữ nguyên.
+      description: |
+        Yêu cầu Admin hoặc Staff.
+
+        **Xử lý ảnh:** Truyền `existingImages` là JSON array các URL ảnh cũ muốn **giữ lại**.
+        Ảnh cũ không có trong danh sách sẽ bị xóa khỏi server. Thêm file mới qua `images`.
+        Nếu không truyền `existingImages`, toàn bộ ảnh cũ được giữ nguyên.
       requestBody:
         required: true
         content:
@@ -1864,12 +1877,16 @@ paths:
                 recognitionDate:
                   type: string
                   format: date
+                existingImages:
+                  type: string
+                  description: 'JSON array URL ảnh cũ cần giữ lại — ["/uploads/img1.jpg"]'
+                  example: '["/uploads/1714200000000-123.jpg"]'
                 images:
                   type: array
                   items:
                     type: string
                     format: binary
-                  description: Bỏ trống để giữ ảnh cũ
+                  description: File ảnh mới cần thêm vào
       responses:
         '200':
           description: Cập nhật thành công
@@ -2230,8 +2247,11 @@ paths:
         - bearerAuth: []
       description: |
         Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
-        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên.
         Nếu truyền `owner`, owner cũ sẽ bị thay thế (ownerId set về null nếu không truyền owner).
+
+        **Xử lý ảnh:** Truyền `existingImages` là JSON array các URL ảnh cũ muốn **giữ lại**.
+        Ảnh cũ không có trong danh sách sẽ bị xóa khỏi server. Thêm file mới qua `images`.
+        Nếu không truyền `existingImages`, toàn bộ ảnh cũ được giữ nguyên.
       requestBody:
         required: true
         content:
@@ -2272,12 +2292,16 @@ paths:
                 owner:
                   type: string
                   description: 'JSON object string — {"name":"...","address":"..."}'
+                existingImages:
+                  type: string
+                  description: 'JSON array URL ảnh cũ cần giữ lại — ["/uploads/img1.jpg"]'
+                  example: '["/uploads/1714200000000-123.jpg"]'
                 images:
                   type: array
                   items:
                     type: string
                     format: binary
-                  description: Bỏ trống để giữ ảnh cũ
+                  description: File ảnh mới cần thêm vào
       responses:
         '200':
           description: Cập nhật thành công
@@ -2604,8 +2628,11 @@ paths:
         - bearerAuth: []
       description: |
         Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
-        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên.
         Nếu không truyền `owner`/`managementOrg`, giá trị tương ứng sẽ được set về null.
+
+        **Xử lý ảnh:** Truyền `existingImages` là JSON array các URL ảnh cũ muốn **giữ lại**.
+        Ảnh cũ không có trong danh sách sẽ bị xóa khỏi server. Thêm file mới qua `images`.
+        Nếu không truyền `existingImages`, toàn bộ ảnh cũ được giữ nguyên.
       requestBody:
         required: true
         content:
@@ -2639,12 +2666,16 @@ paths:
                 managementOrg:
                   type: string
                   description: 'JSON object string — {"name":"...","address":"..."}'
+                existingImages:
+                  type: string
+                  description: 'JSON array URL ảnh cũ cần giữ lại — ["/uploads/img1.jpg"]'
+                  example: '["/uploads/1714200000000-123.jpg"]'
                 images:
                   type: array
                   items:
                     type: string
                     format: binary
-                  description: Bỏ trống để giữ ảnh cũ
+                  description: File ảnh mới cần thêm vào
       responses:
         '200':
           description: Cập nhật thành công
@@ -2971,8 +3002,11 @@ paths:
         - bearerAuth: []
       description: |
         Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
-        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên. Danh sách `authors` sẽ được thay thế hoàn toàn.
-        Nếu không truyền `owner`, ownerId sẽ được set về null.
+        Danh sách `authors` sẽ được thay thế hoàn toàn. Nếu không truyền `owner`, ownerId sẽ được set về null.
+
+        **Xử lý ảnh:** Truyền `existingImages` là JSON array các URL ảnh cũ muốn **giữ lại**.
+        Ảnh cũ không có trong danh sách sẽ bị xóa khỏi server. Thêm file mới qua `images`.
+        Nếu không truyền `existingImages`, toàn bộ ảnh cũ được giữ nguyên.
       requestBody:
         required: true
         content:
@@ -3007,12 +3041,16 @@ paths:
                 authors:
                   type: string
                   description: 'JSON array string — [{"name":"...","address":"..."}]'
+                existingImages:
+                  type: string
+                  description: 'JSON array URL ảnh cũ cần giữ lại — ["/uploads/img1.jpg"]'
+                  example: '["/uploads/1714200000000-123.jpg"]'
                 images:
                   type: array
                   items:
                     type: string
                     format: binary
-                  description: Bỏ trống để giữ ảnh cũ
+                  description: File ảnh mới cần thêm vào
       responses:
         '200':
           description: Cập nhật thành công
@@ -3349,8 +3387,11 @@ paths:
         - bearerAuth: []
       description: |
         Yêu cầu Admin hoặc Staff. Sử dụng `multipart/form-data`.
-        Nếu không upload ảnh mới, ảnh cũ được giữ nguyên. Danh sách `authors` sẽ được thay thế hoàn toàn.
-        Nếu không truyền `owner`, ownerId sẽ được set về null.
+        Danh sách `authors` sẽ được thay thế hoàn toàn. Nếu không truyền `owner`, ownerId sẽ được set về null.
+
+        **Xử lý ảnh:** Truyền `existingImages` là JSON array các URL ảnh cũ muốn **giữ lại**.
+        Ảnh cũ không có trong danh sách sẽ bị xóa khỏi server. Thêm file mới qua `images`.
+        Nếu không truyền `existingImages`, toàn bộ ảnh cũ được giữ nguyên.
       requestBody:
         required: true
         content:
@@ -3388,12 +3429,16 @@ paths:
                 authors:
                   type: string
                   description: 'JSON array string — [{"name":"...","address":"..."}]'
+                existingImages:
+                  type: string
+                  description: 'JSON array URL ảnh cũ cần giữ lại — ["/uploads/img1.jpg"]'
+                  example: '["/uploads/1714200000000-123.jpg"]'
                 images:
                   type: array
                   items:
                     type: string
                     format: binary
-                  description: Bỏ trống để giữ ảnh cũ
+                  description: File ảnh mới cần thêm vào
       responses:
         '200':
           description: Cập nhật thành công

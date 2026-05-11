@@ -7,6 +7,8 @@ const router = Router();
 
 router.get('/search', TrademarkController.search);
 router.get('/search-all', authenticateJWT, isAdminOrStaff, TrademarkController.searchAll);
+router.get('/export', authenticateJWT, isAdminOrStaff, TrademarkController.exportRows);
+router.post('/import', authenticateJWT, isAdminOrStaff, TrademarkController.importRows);
 router.get('/', TrademarkController.getAll);
 router.get('/:id', TrademarkController.getById);
 router.post('/', authenticateJWT, isAdminOrStaff, upload.array('images', 5), TrademarkController.create);

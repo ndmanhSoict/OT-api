@@ -59,9 +59,11 @@ CREATE TABLE trademarks (
     expirationDate DATE,
     productServiceGroup TEXT,
     classification VARCHAR(100),
+    applicantId BIGINT,
     ownerId BIGINT,
     status VARCHAR(100),
     imageUrls TEXT,
+    FOREIGN KEY (applicantId) REFERENCES stakeholders(id) ON DELETE SET NULL,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
 );
 
@@ -76,9 +78,11 @@ CREATE TABLE inventions (
     certificateNumber VARCHAR(100),
     grantDate DATE,
     ipcClassification VARCHAR(100),
+    applicantId BIGINT,
     ownerId BIGINT,
     status VARCHAR(100),
     imageUrls TEXT,
+    FOREIGN KEY (applicantId) REFERENCES stakeholders(id) ON DELETE SET NULL,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
 );
 
@@ -94,9 +98,11 @@ CREATE TABLE industrialDesigns (
     grantDate DATE,
     expirationDate DATE,
     locarnoClassification VARCHAR(100),
+    applicantId BIGINT,
     ownerId BIGINT,
     status VARCHAR(100),
     imageUrls TEXT,
+    FOREIGN KEY (applicantId) REFERENCES stakeholders(id) ON DELETE SET NULL,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
 );
 

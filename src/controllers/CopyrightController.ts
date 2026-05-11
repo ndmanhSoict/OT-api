@@ -1,5 +1,8 @@
+import fs from 'fs';
+import path from 'path';
 import { Request, Response } from 'express';
 import pool from '../config/database';
+import { asDate, asText, findOrCreateStakeholder, getCell, getRows, getStakeholders, hasAnyValue } from '../utils/importRows';
 
 export class CopyrightController {
 
@@ -58,6 +61,107 @@ export class CopyrightController {
       res.status(200).json({ success: true, data: rows });
     } catch (error: any) {
       res.status(500).json({ success: false, message: 'Lỗi tìm kiếm', error: error.message });
+    }
+  }
+
+  static async exportRows(req: Request, res: Response): Promise<void> {
+    try {
+      const rawQ = ((req.query.q as string) ?? '').trim();
+      const baseSql = `
+        SELECT title, certificateNumber, type, grantDate
+        FROM copyrights
+      `;
+
+      if (!rawQ) {
+        const [rows]: any = await pool.query(`${baseSql} ORDER BY id DESC`);
+        res.status(200).json({ success: true, data: rows });
+        return;
+      }
+
+      const q = `%${rawQ}%`;
+      const [rows]: any = await pool.query(
+        `${baseSql}
+         WHERE certificateNumber LIKE ? OR title LIKE ? OR type LIKE ?
+            OR CAST(grantDate AS CHAR) LIKE ?
+         ORDER BY id DESC`,
+        [q, q, q, q]
+      );
+      res.status(200).json({ success: true, data: rows });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: 'Lỗi xuất dữ liệu bản quyền', error: error.message });
+    }
+  }
+
+  static async importRows(req: Request, res: Response): Promise<void> {
+    const rows = getRows(req.body).filter(hasAnyValue);
+    if (rows.length === 0) {
+      res.status(400).json({ success: false, message: 'File Excel không có dữ liệu hợp lệ' });
+      return;
+    }
+
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      let imported = 0;
+      let skipped = 0;
+      const baseId = Date.now();
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const title = asText(getCell(row, ['Tên tác phẩm', 'title']));
+        if (!title) {
+          skipped++;
+          continue;
+        }
+        const copyrightId = baseId + i;
+
+        await connection.query(
+          `INSERT INTO copyrights (id, title, certificateNumber, type, grantDate, imageUrls)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            copyrightId,
+            title,
+            asText(getCell(row, ['Số giấy chứng nhận', 'Số chứng nhận', 'certificateNumber'])),
+            asText(getCell(row, ['Loại hình', 'Loại', 'type'])),
+            asDate(getCell(row, ['Ngày cấp', 'grantDate'])),
+            JSON.stringify([]),
+          ]
+        );
+
+        const authors = getStakeholders(
+          getCell(row, ['Tác giả', 'authors']),
+          getCell(row, ['Địa chỉ tác giả', 'authorAddress'])
+        );
+        const owners = getStakeholders(
+          getCell(row, ['Tên chủ sở hữu', 'Chủ sở hữu', 'owners']),
+          getCell(row, ['Địa chỉ chủ sở hữu', 'ownerAddress'])
+        );
+
+        for (let authorIndex = 0; authorIndex < authors.length; authorIndex++) {
+          const stakeholderId = await findOrCreateStakeholder(connection, authors[authorIndex], baseId + 100000 + i * 20 + authorIndex);
+          await connection.query(
+            'INSERT IGNORE INTO copyrightAuthors (copyrightId, stakeholderId, role) VALUES (?, ?, ?)',
+            [copyrightId, stakeholderId, 'author']
+          );
+        }
+
+        for (let ownerIndex = 0; ownerIndex < owners.length; ownerIndex++) {
+          const stakeholderId = await findOrCreateStakeholder(connection, owners[ownerIndex], baseId + 200000 + i * 20 + ownerIndex);
+          await connection.query(
+            'INSERT IGNORE INTO copyrightAuthors (copyrightId, stakeholderId, role) VALUES (?, ?, ?)',
+            [copyrightId, stakeholderId, 'owner']
+          );
+        }
+        imported++;
+      }
+
+      await connection.commit();
+      res.status(201).json({ success: true, message: `Đã import ${imported} dòng`, imported, skipped });
+    } catch (error: any) {
+      await connection.rollback();
+      res.status(500).json({ success: false, message: 'Lỗi import bản quyền', error: error.message });
+    } finally {
+      connection.release();
     }
   }
 
@@ -182,11 +286,21 @@ export class CopyrightController {
         return;
       }
 
-      const files = req.files as Express.Multer.File[];
-      let finalImageUrls = existing[0].imageUrls;
-      if (files && files.length > 0) {
-        finalImageUrls = JSON.stringify(files.map(file => `/uploads/${file.filename}`));
+      const oldUrls: string[] = JSON.parse(existing[0].imageUrls || '[]');
+      const keepUrls: string[] = req.body.existingImages !== undefined
+        ? JSON.parse(req.body.existingImages || '[]')
+        : oldUrls;
+
+      for (const url of oldUrls) {
+        if (!keepUrls.includes(url)) {
+          const filePath = path.join(process.cwd(), 'uploads', path.basename(url));
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
       }
+
+      const files = req.files as Express.Multer.File[];
+      const newUrls = files ? files.map(file => `/uploads/${file.filename}`) : [];
+      const finalImageUrls = JSON.stringify([...keepUrls, ...newUrls]);
 
       await connection.query(
         'UPDATE copyrights SET certificateNumber = ?, grantDate = ?, title = ?, type = ?, imageUrls = ? WHERE id = ?',

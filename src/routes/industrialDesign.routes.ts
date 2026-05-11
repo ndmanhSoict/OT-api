@@ -7,6 +7,8 @@ const router = Router();
 
 router.get('/search', IndustrialDesignController.search);
 router.get('/search-all', authenticateJWT, isAdminOrStaff, IndustrialDesignController.searchAll);
+router.get('/export', authenticateJWT, isAdminOrStaff, IndustrialDesignController.exportRows);
+router.post('/import', authenticateJWT, isAdminOrStaff, IndustrialDesignController.importRows);
 router.get('/', IndustrialDesignController.getAll);
 router.get('/:id', IndustrialDesignController.getById);
 router.post('/', authenticateJWT, isAdminOrStaff, upload.array('images', 5), IndustrialDesignController.create);

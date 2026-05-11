@@ -2,11 +2,11 @@
 -- SHTT Database Schema (Full - chạy 1 lần từ đầu)
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS defaultdb
+CREATE DATABASE IF NOT EXISTS SHTT_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE defaultdb;
+USE SHTT_db;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
@@ -95,9 +95,11 @@ CREATE TABLE trademarks (
     expirationDate      DATE,
     productServiceGroup TEXT,
     classification      VARCHAR(100),
+    applicantId         BIGINT,
     ownerId             BIGINT,
     status              VARCHAR(100),
     imageUrls           TEXT,
+    FOREIGN KEY (applicantId) REFERENCES stakeholders(id) ON DELETE SET NULL,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
 );
 
@@ -112,9 +114,11 @@ CREATE TABLE inventions (
     certificateNumber VARCHAR(100),
     grantDate         DATE,
     ipcClassification VARCHAR(100),
+    applicantId       BIGINT,
     ownerId           BIGINT,
     status            VARCHAR(100),
     imageUrls         TEXT,
+    FOREIGN KEY (applicantId) REFERENCES stakeholders(id) ON DELETE SET NULL,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
 );
 
@@ -139,9 +143,11 @@ CREATE TABLE industrialDesigns (
     grantDate            DATE,
     expirationDate       DATE,
     locarnoClassification VARCHAR(100),
+    applicantId          BIGINT,
     ownerId              BIGINT,
     status               VARCHAR(100),
     imageUrls            TEXT,
+    FOREIGN KEY (applicantId) REFERENCES stakeholders(id) ON DELETE SET NULL,
     FOREIGN KEY (ownerId) REFERENCES stakeholders(id) ON DELETE SET NULL
 );
 
